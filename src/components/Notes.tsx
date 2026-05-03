@@ -83,12 +83,12 @@ export const getNotes = (settings: Settings): Record<string, Note<any>> => {
     arcL: new Note({
       id: "arcL",
       Component: ArcNote,
-      props: { side: "left", size: 94, fluid: true },
+      props: { side: "left" as const, size: 94, fluid: true },
     }),
     arcR: new Note({
       id: "arcR",
       Component: ArcNote,
-      props: { side: "right", size: 94, fluid: true },
+      props: { side: "right" as const, size: 94, fluid: true },
     }),
     ...Object.fromEntries(
       positionNotes
