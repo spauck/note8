@@ -184,7 +184,7 @@ export function ComposerGrid({
                   <BarColumn
                     bar={bar}
                     barIdx={barIdx}
-                    startCount={startCounts[bi]}
+                    startBeat={startBeats[bi]}
                     notesPerCount={notesPerCount}
                     viewMode={viewMode}
                     isHighlighted={

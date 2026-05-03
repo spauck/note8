@@ -6,8 +6,8 @@ import { BeatCell } from "./BeatCell";
 interface BarColumnProps {
   bar: Bar;
   barIdx: number;
-  /** 1-based count number that the first beat of this bar represents. */
-  startCount: number;
+  /** Absolute beat index (0-based) of this bar's first beat within the row. */
+  startBeat: number;
   notesPerCount: number;
   viewMode?: boolean;
   isHighlighted: boolean;
@@ -35,7 +35,7 @@ function getCountLabels(beatNumber: number, notesPerCount: number): string[] {
 export function BarColumn({
   bar,
   barIdx,
-  startCount,
+  startBeat,
   notesPerCount,
   viewMode,
   isHighlighted,
@@ -59,7 +59,7 @@ export function BarColumn({
     >
       {/* Count labels */}
       {bar.beats.map((_, beatIdx) => {
-        const absoluteBeat = (startCount - 1) * notesPerCount + beatIdx;
+        const absoluteBeat = startBeat + beatIdx;
         const countGroup = Math.floor(absoluteBeat / notesPerCount);
         const subIdx = absoluteBeat % notesPerCount;
         const labels = getCountLabels(countGroup + 1, notesPerCount);
