@@ -105,11 +105,12 @@ export function ComposerGrid({
           .map((b) => `minmax(0, ${b.beats.length}fr)`)
           .join(" ");
 
-        // Compute starting count for each bar; counts reset per row.
-        let runningCount = 1;
-        const startCounts = rowBars.map(({ bar }) => {
-          const start = runningCount;
-          runningCount += Math.ceil(bar.beats.length / notesPerCount);
+        // Compute starting absolute beat index for each bar so that count
+        // labels flow continuously across bar boundaries within a row.
+        let runningBeat = 0;
+        const startBeats = rowBars.map(({ bar }) => {
+          const start = runningBeat;
+          runningBeat += bar.beats.length;
           return start;
         });
 
