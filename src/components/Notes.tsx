@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type { Hand } from "@/lib/composer-state";
 import type { Settings } from "@/lib/settings";
+import { ArcNote } from "./ArcNote";
 import { IconNote } from "./IconNote";
 import { RadialGlyph } from "./PanScriptGlyph";
 
@@ -78,6 +79,16 @@ export const getNotes = (settings: Settings): Record<string, Note<any>> => {
       id: "ting",
       Component: IconNote,
       props: { Icon: CircleSmall, size: "48%", strokeWidth: 10 / 3 },
+    }),
+    arcL: new Note({
+      id: "arcL",
+      Component: ArcNote,
+      props: { side: "left", size: 94, fluid: true },
+    }),
+    arcR: new Note({
+      id: "arcR",
+      Component: ArcNote,
+      props: { side: "right", size: 94, fluid: true },
     }),
     ...Object.fromEntries(
       positionNotes
