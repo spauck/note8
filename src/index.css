@@ -34,7 +34,7 @@
 
     --border: 220 12% 85%;
     --input: 220 12% 85%;
-    --ring: 45 80% 45%;
+    --ring: 71 48% 70%;
 
     --radius: 0.5rem;
 
@@ -65,7 +65,7 @@
     --popover: 220 18% 14%;
     --popover-foreground: 45 20% 90%;
 
-    --primary: 45 80% 60%;
+    --primary: 71 48% 70%;
     --primary-foreground: 220 20% 10%;
 
     --secondary: 220 15% 20%;
@@ -82,7 +82,7 @@
 
     --border: 220 15% 22%;
     --input: 220 15% 22%;
-    --ring: 45 80% 60%;
+    --ring: 71 48% 70%;
 
     --hand-right: 210 80% 60%;
     --hand-left: 0 70% 58%;
