@@ -90,7 +90,7 @@ export function PositionKeyboard({
               settings={settings}
               chords={chords}
               currentChordKey={currentChordKey}
-              onTap={onSetBeat}
+              onTap={(chord) => onSetBeat(chord.notes)}
             />
           )}
 
