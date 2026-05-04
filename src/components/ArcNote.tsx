@@ -20,11 +20,11 @@ export function ArcNote({
   className,
 }: ArcNoteProps) {
   const color = handColor(hand) || "currentColor";
-  // Left paren: arc opening to the right; right paren: arc opening to the left.
+  // Draw a circular arc from +60° to -60° relative to horizontal (center 50,50; r=40).
   const d =
     side === "left"
-      ? "M 65 15 Q 30 50 65 85"
-      : "M 35 15 Q 70 50 35 85";
+      ? "M 30 15 A 40 40 0 0 0 30 85"
+      : "M 70 15 A 40 40 0 0 1 70 85";
   return (
     <svg
       viewBox="0 0 100 100"
@@ -37,7 +37,7 @@ export function ArcNote({
         d={d}
         fill="none"
         stroke={color}
-        strokeWidth={12}
+        strokeWidth={9}
         strokeLinecap="round"
       />
     </svg>

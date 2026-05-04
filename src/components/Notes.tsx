@@ -44,7 +44,6 @@ const ICON_MAP: Record<string, LucideIcon> = {
   ghost: Ghost,
   dash: CircleDashed,
   ding: CircleSmall,
-  dot: Dot,
   x: X,
 };
 
@@ -83,12 +82,12 @@ export const getNotes = (settings: Settings): Record<string, Note<any>> => {
     arcL: new Note({
       id: "arcL",
       Component: ArcNote,
-      props: { side: "left" as const, size: 94, fluid: true },
+      props: { side: "left" as const, fluid: true },
     }),
     arcR: new Note({
       id: "arcR",
       Component: ArcNote,
-      props: { side: "right" as const, size: 94, fluid: true },
+      props: { side: "right" as const, fluid: true },
     }),
     ...Object.fromEntries(
       positionNotes
