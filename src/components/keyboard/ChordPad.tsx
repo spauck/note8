@@ -1,5 +1,3 @@
-/** biome-ignore-all lint/suspicious/noArrayIndexKey: stable per chord */
-
 import type { Settings } from "@/lib/settings";
 import { NoteGlyph } from "../NoteGlyph";
 import type { Chord } from "./chords";
@@ -37,14 +35,7 @@ export function ChordPad({
               .map((n) => `${n.hand[0].toUpperCase()}:${n.value}`)
               .join(", ")}
           >
-            {chord.notes.map((n, i) => (
-              <span
-                key={i}
-                className="absolute inset-0 flex items-center justify-center"
-              >
-                <NoteGlyph noteId={n.value} hand={n.hand} settings={settings} />
-              </span>
-            ))}
+            <NoteGlyph notes={chord.notes} settings={settings} />
           </button>
         );
       })}
