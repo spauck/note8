@@ -1,12 +1,13 @@
-/** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
-
 import { Eraser } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Bar, Beat, Hand } from "@/lib/composer-state";
-import { handColorClass, useSettings } from "@/lib/settings";
-import { handColor } from "./handColor";
-import { NoteGlyph } from "./NoteGlyph";
-import { getNotes } from "./Notes";
+import { useSettings } from "@/lib/settings";
+import { ChordPad } from "./keyboard/ChordPad";
+import { extractChords, serializeChord } from "./keyboard/chords";
+import { HandSelector } from "./keyboard/HandSelector";
+import { KeyboardTabs } from "./keyboard/KeyboardTabs";
+import { NotePad } from "./keyboard/NotePad";
+import type { KeyboardTab } from "./keyboard/types";
 
 interface SelectedCell {
   barIdx: number;
@@ -21,42 +22,6 @@ interface PositionKeyboardProps {
   onRemoveNote: (value: string) => void;
   onClearAll: () => void;
   onSetBeat: (beat: Beat) => void;
-}
-
-const HAND_OPTIONS: { hand: Hand; label: string; short: string }[] = [
-  { hand: "right", label: "Right", short: "R" },
-  { hand: "left", label: "Left", short: "L" },
-  { hand: "any", label: "Any", short: "A" },
-  { hand: "none", label: "None", short: "N" },
-];
-
-type KeyboardTab = "notes" | "chords";
-
-/** A chord is a unique combination of notes with their hand assignments */
-interface Chord {
-  key: string; // serialized identity
-  notes: Array<{ value: string; hand: Hand }>;
-}
-
-function serializeChord(notes: Array<{ value: string; hand: Hand }>): string {
-  return notes
-    .map((n) => `${n.hand}:${n.value}`)
-    .sort()
-    .join("|");
-}
-
-function extractChords(bars: Bar[]): Chord[] {
-  const seen = new Map<string, Chord>();
-  for (const bar of bars) {
-    for (const notes of bar.beats) {
-      if (notes.length < 2) continue;
-      const key = serializeChord(notes);
-      if (!seen.has(key)) {
-        seen.set(key, { key, notes });
-      }
-    }
-  }
-  return Array.from(seen.values());
 }
 
 export function PositionKeyboard({
@@ -80,25 +45,11 @@ export function PositionKeyboard({
   const totalNotes = activeNotes.length;
 
   const handleTap = (val: string) => {
-    if (activeMap.has(val)) {
-      onRemoveNote(val);
-    } else {
-      onAssignNote(val, lastHand);
-    }
-  };
-
-  const handleChordTap = (chord: Chord) => {
-    onSetBeat(chord.notes);
+    if (activeMap.has(val)) onRemoveNote(val);
+    else onAssignNote(val, lastHand);
   };
 
   const currentChordKey = totalNotes > 0 ? serializeChord(activeNotes) : null;
-
-  const TAB_OPTIONS: { id: KeyboardTab; label: string }[] = [
-    { id: "notes", label: "Notes" },
-    ...(chords.length > 0
-      ? [{ id: "chords" as KeyboardTab, label: `Chords (${chords.length})` }]
-      : []),
-  ];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur border-t border-border px-3 py-2 safe-bottom">
@@ -113,112 +64,35 @@ export function PositionKeyboard({
             </span>
           )}
           <div className="ml-auto flex items-center gap-1">
-            {/* Hand selector */}
-            {tab === "notes" &&
-              HAND_OPTIONS.map(({ hand, short }) => {
-                const isActive = lastHand === hand;
-                const colorCls = handColorClass(hand);
-                return (
-                  <button
-                    type="button"
-                    key={hand}
-                    onClick={() => setLastHand(hand)}
-                    className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors font-semibold ${
-                      isActive
-                        ? `${colorCls} border-ring bg-accent`
-                        : `${colorCls} border-border hover:border-ring/50`
-                    }`}
-                  >
-                    {short}
-                  </button>
-                );
-              })}
+            {tab === "notes" && (
+              <HandSelector value={lastHand} onChange={setLastHand} />
+            )}
             <span className="w-px h-4 bg-border mx-0.5" />
-            {TAB_OPTIONS.map(({ id, label }) => (
-              <button
-                type="button"
-                key={id}
-                onClick={() => setTab(id)}
-                className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
-                  tab === id
-                    ? "bg-accent border-ring text-foreground"
-                    : "border-border text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            <KeyboardTabs
+              tab={tab}
+              onChange={setTab}
+              chordCount={chords.length}
+            />
           </div>
         </div>
 
-        {/* Note buttons */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          {tab === "notes" &&
-            Object.entries(getNotes(settings)).map(([val, note]) => {
-              const noteHand = activeMap.get(val);
-              const isActive = noteHand !== undefined;
+          {tab === "notes" && (
+            <NotePad
+              settings={settings}
+              activeMap={activeMap}
+              onTap={handleTap}
+            />
+          )}
 
-              return (
-                <button
-                  type="button"
-                  key={val}
-                  onClick={() => handleTap(val)}
-                  className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg transition-colors border
-                    ${
-                      isActive
-                        ? "bg-secondary border-current"
-                        : "bg-secondary hover:bg-accent text-foreground border-border"
-                    }`}
-                  style={isActive ? { color: handColor(noteHand) } : undefined}
-                  title={val === "0" ? "Ding" : `Field ${val}`}
-                >
-                  <note.Component
-                    {...note.props}
-                    noteId={val}
-                    hand={noteHand ?? "none"}
-                    settings={settings}
-                    className="relative inset-0 flex items-center justify-center"
-                  />
-                </button>
-              );
-            })}
-
-          {tab === "chords" &&
-            chords.map((chord) => {
-              const isCurrentChord = currentChordKey === chord.key;
-              // Separate position notes and icon notes
-
-              return (
-                <button
-                  type="button"
-                  key={chord.key}
-                  onClick={() => handleChordTap(chord)}
-                  className={`shrink-0 w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-lg transition-colors border relative
-                    ${
-                      isCurrentChord
-                        ? "ring-2 ring-ring bg-accent border-ring"
-                        : "bg-secondary hover:bg-accent border-border"
-                    }`}
-                  title={chord.notes
-                    .map((n) => `${n.hand[0].toUpperCase()}:${n.value}`)
-                    .join(", ")}
-                >
-                  {chord.notes.map((n, i) => (
-                    <span
-                      key={i}
-                      className="absolute inset-0 flex items-center justify-center"
-                    >
-                      <NoteGlyph
-                        key={i}
-                        noteId={n.value}
-                        hand={n.hand}
-                        settings={settings}
-                      />
-                    </span>
-                  ))}
-                </button>
-              );
-            })}
+          {tab === "chords" && (
+            <ChordPad
+              settings={settings}
+              chords={chords}
+              currentChordKey={currentChordKey}
+              onTap={(chord) => onSetBeat(chord.notes)}
+            />
+          )}
 
           {tab !== "chords" && (
             <button

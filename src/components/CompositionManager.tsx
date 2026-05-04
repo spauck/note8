@@ -1,32 +1,12 @@
-import { Trash2 } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
-import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { useCallback, useState } from "react";
+import { ConfirmDialog } from "@/components/composition/ConfirmDialog";
+import { LoadCompositionDialog } from "@/components/composition/LoadCompositionDialog";
+import { SaveCompositionDialog } from "@/components/composition/SaveCompositionDialog";
+import { useCompositionFileIO } from "@/hooks/useCompositionFileIO";
 import { type ComposerState, encodeState } from "@/lib/composer-state";
 import {
   compositionExists,
   deleteComposition,
-  exportAllCompositions,
-  importCompositions,
   listSavedCompositions,
   type SavedComposition,
   saveComposition,
@@ -40,6 +20,8 @@ interface Props {
   onSaved: (name: string) => void;
 }
 
+/** Coordinates save/load/export/import dialogs and returns hooks for the
+ * caller to attach action buttons to. */
 export function CompositionManager({
   state,
   loadedName,
@@ -47,7 +29,7 @@ export function CompositionManager({
   hasUnsavedChanges,
   onSaved,
 }: Props) {
-  /* ── Save dialog ── */
+  /* Save flow */
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [confirmOverwrite, setConfirmOverwrite] = useState(false);
@@ -77,7 +59,7 @@ export function CompositionManager({
     setSaveOpen(false);
   }, [saveName, state, onSaved]);
 
-  /* ── Load dialog ── */
+  /* Load flow */
   const [loadOpen, setLoadOpen] = useState(false);
   const [compositions, setCompositions] = useState<SavedComposition[]>([]);
   const [pendingLoad, setPendingLoad] = useState<SavedComposition | null>(null);
@@ -118,45 +100,8 @@ export function CompositionManager({
     }
   }, [deleteTarget]);
 
-  /* ── Export / Import ── */
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleExport = useCallback(() => {
-    const data = exportAllCompositions();
-    const blob = new Blob([data], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "handpan-compositions.json";
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Compositions exported");
-  }, []);
-
-  const handleImport = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const count = importCompositions(reader.result as string, false);
-          toast.success(
-            `Imported ${count} composition${count !== 1 ? "s" : ""}`,
-          );
-        } catch {
-          toast.error("Invalid file format");
-        }
-      };
-      reader.readAsText(file);
-      e.target.value = "";
-    },
-    [],
-  );
+  /* File IO */
+  const { handleExport, handleImport, fileInput } = useCompositionFileIO();
 
   return {
     openSave,
@@ -165,157 +110,49 @@ export function CompositionManager({
     handleImport,
     dialogs: (
       <>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json"
-          className="hidden"
-          onChange={handleFileChange}
+        {fileInput}
+        <SaveCompositionDialog
+          open={saveOpen}
+          onOpenChange={setSaveOpen}
+          name={saveName}
+          onNameChange={setSaveName}
+          onSave={doSave}
         />
-
-        {/* Save dialog */}
-        <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-          <DialogContent className="sm:max-w-sm">
-            <DialogHeader>
-              <DialogTitle>Save Composition</DialogTitle>
-              <DialogDescription>
-                Enter a name for this composition.
-              </DialogDescription>
-            </DialogHeader>
-            <Input
-              value={saveName}
-              onChange={(e) => setSaveName(e.target.value)}
-              placeholder="My Composition"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") doSave();
-              }}
-              autoFocus
-            />
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setSaveOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={doSave} disabled={!saveName.trim()}>
-                Save
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Overwrite confirmation */}
-        <AlertDialog open={confirmOverwrite} onOpenChange={setConfirmOverwrite}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                Overwrite "{saveName.trim()}"?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                A composition with this name already exists. Saving will replace
-                it.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmAndSave}>
-                Overwrite
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Load dialog */}
-        <Dialog open={loadOpen} onOpenChange={setLoadOpen}>
-          <DialogContent className="sm:max-w-sm">
-            <DialogHeader>
-              <DialogTitle>Load Composition</DialogTitle>
-              <DialogDescription>
-                Select a saved composition to load.
-              </DialogDescription>
-            </DialogHeader>
-            {compositions.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No saved compositions yet.
-              </p>
-            ) : (
-              <div className="max-h-60 overflow-y-auto space-y-1">
-                {compositions.map((comp) => (
-                  <div
-                    key={comp.name}
-                    className="flex items-center justify-between px-3 py-2 rounded hover:bg-accent/50 transition-colors group"
-                  >
-                    <button
-                      type="button"
-                      className="flex-1 text-left text-sm text-foreground"
-                      onClick={() => handleLoadClick(comp)}
-                    >
-                      <span className="font-medium">{comp.name}</span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        {new Date(comp.savedAt).toLocaleDateString()}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteTarget(comp)}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity p-1"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Confirm load over unsaved */}
-        <AlertDialog
+        <ConfirmDialog
+          open={confirmOverwrite}
+          onOpenChange={setConfirmOverwrite}
+          title={`Overwrite "${saveName.trim()}"?`}
+          description="A composition with this name already exists. Saving will replace it."
+          confirmLabel="Overwrite"
+          onConfirm={confirmAndSave}
+        />
+        <LoadCompositionDialog
+          open={loadOpen}
+          onOpenChange={setLoadOpen}
+          compositions={compositions}
+          onLoad={handleLoadClick}
+          onRequestDelete={setDeleteTarget}
+        />
+        <ConfirmDialog
           open={!!pendingLoad}
           onOpenChange={(o) => {
             if (!o) setPendingLoad(null);
           }}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
-              <AlertDialogDescription>
-                You have unsaved changes. Loading a new composition will discard
-                them.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmLoad}>
-                Load anyway
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Confirm delete */}
-        <AlertDialog
+          title="Unsaved changes"
+          description="You have unsaved changes. Loading a new composition will discard them."
+          confirmLabel="Load anyway"
+          onConfirm={confirmLoad}
+        />
+        <ConfirmDialog
           open={!!deleteTarget}
           onOpenChange={(o) => {
             if (!o) setDeleteTarget(null);
           }}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                Delete "{deleteTarget?.name}"?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                This composition will be permanently removed.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete}>
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          title={`Delete "${deleteTarget?.name}"?`}
+          description="This composition will be permanently removed."
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+        />
       </>
     ),
   };
