@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { useOutsideClick } from "@/hooks/useOutsideClick";
 import type { Bar } from "@/lib/composer-state";
 import { groupIntoRows } from "@/lib/composer-state";
 import { GridRow } from "./GridRow";
-import { useOutsideClick } from "@/hooks/useOutsideClick";
 
 interface SelectedCell {
   barIdx: number;
@@ -76,6 +76,7 @@ export function ComposerGrid({
     <div className="space-y-3" ref={gridRef}>
       {rows.map((row, rowIdx) => (
         <GridRow
+          // biome-ignore lint/suspicious/noArrayIndexKey: perfectly fine here
           key={rowIdx}
           rowIdx={rowIdx}
           rowCount={rows.length}

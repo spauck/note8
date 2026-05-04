@@ -1,10 +1,5 @@
 import { useCallback, useMemo } from "react";
-import {
-  type Bar,
-  type Beat,
-  type ComposerState,
-  type Hand,
-} from "@/lib/composer-state";
+import type { Bar, Beat, ComposerState, Hand } from "@/lib/composer-state";
 
 interface SelectedCell {
   barIdx: number;

@@ -9,7 +9,7 @@ import { NotesPerCountSelect } from "@/components/NotesPerCountSelect";
 import { PositionKeyboard } from "@/components/PositionKeyboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ViewModeToggle } from "@/components/ViewModeToggle";
-import { useAutosave, readAutosave } from "@/hooks/useAutosave";
+import { readAutosave, useAutosave } from "@/hooks/useAutosave";
 import { useBarOperations } from "@/hooks/useBarOperations";
 import { useComposerState } from "@/hooks/useComposerState";
 import { useNoteAssignment } from "@/hooks/useNoteAssignment";

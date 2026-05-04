@@ -2,7 +2,6 @@ import {
   Circle,
   CircleDashed,
   CircleSmall,
-  Dot,
   Ghost,
   type LucideIcon,
   X,

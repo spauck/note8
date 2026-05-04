@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { type Bar, type ComposerState } from "@/lib/composer-state";
+import type { Bar, ComposerState } from "@/lib/composer-state";
 
 interface SelectedCell {
   barIdx: number;
