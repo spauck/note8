@@ -17,7 +17,7 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
     <button
       type="button"
       className={`aspect-[7/9] w-full flex items-center justify-center rounded transition-all relative
-        ${isSelected ? "ring-2 ring-ring bg-accent z-50" : "hover:bg-secondary"}
+        ${isSelected ? "ring-2 ring-ring bg-accent z-30" : "hover:bg-secondary"}
         ${isEmpty ? "text-beat-empty" : ""}
         cursor-pointer select-none p-0`}
       onClick={onSelect}

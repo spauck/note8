@@ -21,7 +21,7 @@ export function NotePad({ settings, activeMap, onTap }: NotePadProps) {
             type="button"
             key={val}
             onClick={() => onTap(val)}
-            className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg transition-colors border
+            className={`shrink-0 w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-lg transition-colors border
               ${
                 isActive
                   ? "bg-secondary border-current"

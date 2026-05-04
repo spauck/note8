@@ -99,6 +99,8 @@ export function ComposerGrid({
           onDeleteRow={onDeleteRow}
         />
       ))}
+      {/* Give some scroll room so the last row isn't hidden by the keyboard */}
+      <div className="h-48" />
     </div>
   );
 }
