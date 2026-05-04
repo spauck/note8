@@ -10,9 +10,21 @@ export const NoteGlyph = ({
   settings: Settings;
 }) => {
   const notesById = getNotes(settings);
+  const lastNoteValue = notes.at(-1);
+  const lastNote = lastNoteValue && notesById[lastNoteValue.value];
+  const BackgroundComponent = lastNote?.BackgroundComponent;
 
   return (
     <>
+      {BackgroundComponent && (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <BackgroundComponent
+            noteId={lastNoteValue.value}
+            hand={lastNoteValue.hand}
+            settings={settings}
+          />
+        </span>
+      )}
       {notes.map((noteValue, index) => {
         const note = notesById[noteValue.value];
         if (!note) return null;

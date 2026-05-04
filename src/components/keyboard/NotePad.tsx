@@ -1,6 +1,7 @@
 import type { Hand } from "@/lib/composer-state";
 import type { Settings } from "@/lib/settings";
 import { handColor } from "../handColor";
+import { NoteGlyph } from "../NoteGlyph";
 import { getNotes } from "../Notes";
 
 interface NotePadProps {
@@ -13,7 +14,7 @@ interface NotePadProps {
 export function NotePad({ settings, activeMap, onTap }: NotePadProps) {
   return (
     <>
-      {Object.entries(getNotes(settings)).map(([val, note]) => {
+      {Object.keys(getNotes(settings)).map((val) => {
         const noteHand = activeMap.get(val);
         const isActive = noteHand !== undefined;
         return (
@@ -21,7 +22,7 @@ export function NotePad({ settings, activeMap, onTap }: NotePadProps) {
             type="button"
             key={val}
             onClick={() => onTap(val)}
-            className={`shrink-0 w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-lg transition-colors border
+            className={`shrink-0 w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-lg transition-colors border relative
               ${
                 isActive
                   ? "bg-secondary border-current"
@@ -30,12 +31,9 @@ export function NotePad({ settings, activeMap, onTap }: NotePadProps) {
             style={isActive ? { color: handColor(noteHand) } : undefined}
             title={val === "0" ? "Ding" : `Field ${val}`}
           >
-            <note.Component
-              {...note.props}
-              noteId={val}
-              hand={noteHand ?? "none"}
+            <NoteGlyph
+              notes={[{ value: val, hand: noteHand ?? "none" }]}
               settings={settings}
-              className="relative inset-0 flex items-center justify-center"
             />
           </button>
         );

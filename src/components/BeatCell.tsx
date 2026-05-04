@@ -1,4 +1,4 @@
-import { Circle, Dot } from "lucide-react";
+import { Dot } from "lucide-react";
 import type { Beat } from "@/lib/composer-state";
 import { useSettings } from "@/lib/settings";
 import { NoteGlyph } from "./NoteGlyph";
@@ -27,12 +27,7 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
           <Dot />
         </span>
       ) : (
-        <>
-          <span className="absolute inset-0 flex items-center justify-center">
-            <Circle className="text-beat-empty" size={"80%"} strokeWidth={1} />
-          </span>
-          <NoteGlyph notes={beat} settings={settings} />
-        </>
+        <NoteGlyph notes={beat} settings={settings} />
       )}
     </button>
   );
