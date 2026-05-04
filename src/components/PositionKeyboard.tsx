@@ -76,7 +76,7 @@ export function PositionKeyboard({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+        <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1">
           {tab === "notes" && (
             <NotePad
               settings={settings}
@@ -98,10 +98,10 @@ export function PositionKeyboard({
             <button
               type="button"
               onClick={onClearAll}
-              className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive font-mono text-sm transition-colors border border-border"
+              className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-lg bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive font-mono text-sm transition-colors border border-border"
               title="Clear all notes"
             >
-              <Eraser size={16} />
+              <Eraser size={24} />
             </button>
           )}
         </div>

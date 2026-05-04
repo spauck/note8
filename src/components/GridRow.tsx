@@ -63,7 +63,10 @@ export function GridRow({
     bar,
     barIdx: rowStart + i,
   }));
-  const totalBeats = indexedBars.reduce((s, { bar }) => s + bar.beats.length, 0);
+  const totalBeats = indexedBars.reduce(
+    (s, { bar }) => s + bar.beats.length,
+    0,
+  );
   const trailingEmpty = maxRowBeats - totalBeats;
   const uniformGridTemplate = `repeat(${maxRowBeats}, minmax(0, 1fr))`;
 
