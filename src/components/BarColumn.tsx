@@ -68,13 +68,15 @@ export function BarColumn({
           <div
             key={`l-${barIdx}-${beatIdx}`}
             className="flex items-center justify-center mb-0.5"
+            style={{ containerType: "inline-size" }}
           >
             <span
-              className={`text-[12px] font-mono ${
+              className={`font-mono leading-none ${
                 subIdx === 0
                   ? "text-muted-foreground font-semibold"
                   : "text-muted-foreground/50"
               }`}
+              style={{ fontSize: "clamp(8px, 38cqw, 20px)" }}
             >
               {label}
             </span>
