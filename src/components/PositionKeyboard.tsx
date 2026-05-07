@@ -53,8 +53,8 @@ export function PositionKeyboard({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur border-t border-border px-3 py-2 safe-bottom">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center gap-1 mb-1.5">
+      <div className="flex flex-col min-w-0 items-center w-fit mx-auto">
+        <div className="flex flex-row items-center gap-1 mb-1.5 min-w-0 w-full">
           <span className="text-[10px] text-muted-foreground">
             Bar {selectedCell.barIdx + 1}, Beat {selectedCell.beatIdx + 1}
           </span>
@@ -76,7 +76,7 @@ export function PositionKeyboard({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1">
+        <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1 min-w-0">
           {tab === "notes" && (
             <NotePad
               settings={settings}

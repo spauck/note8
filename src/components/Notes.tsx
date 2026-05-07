@@ -1,11 +1,4 @@
-import {
-  Circle,
-  CircleDashed,
-  CircleSmall,
-  Ghost,
-  type LucideIcon,
-  X,
-} from "lucide-react";
+import { Circle, Ghost, type LucideIcon, X } from "lucide-react";
 import type { Hand } from "@/lib/composer-state";
 import type { Settings } from "@/lib/settings";
 import { ArcNote } from "./ArcNote";
@@ -42,19 +35,23 @@ export class Note<T> {
   readonly Component: React.FC<T & BaseNoteProps>;
   readonly props?: T;
   readonly BackgroundComponent?: React.FC<BaseNoteProps>;
+  readonly name: string;
 
   constructor({
     id,
+    name,
     Component,
     props,
     BackgroundComponent,
   }: {
     id: string;
+    name: string;
     Component: React.FC<T & BaseNoteProps>;
     props?: T;
     BackgroundComponent?: React.FC<BaseNoteProps>;
   }) {
     this.id = id;
+    this.name = name;
     this.Component = Component;
     this.props = props;
     this.BackgroundComponent = BackgroundComponent;
@@ -62,10 +59,7 @@ export class Note<T> {
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
-  circle: Circle,
   ghost: Ghost,
-  dash: CircleDashed,
-  ding: CircleSmall,
   x: X,
 };
 
@@ -74,6 +68,7 @@ const iconNotes = Object.fromEntries(
     key,
     new Note({
       id: key,
+      name: key.charAt(0).toUpperCase() + key.slice(1),
       Component: IconNote,
       props: { Icon, size: "80%" },
     }),
@@ -85,6 +80,7 @@ const positionNotes = Array.from(
   (_, i) =>
     new Note({
       id: i.toString(),
+      name: `Note ${i}`,
       Component: RadialGlyph,
       BackgroundComponent: OutlineCircleBackground,
       props: {
@@ -97,19 +93,16 @@ const positionNotes = Array.from(
 export const getNotes = (settings: Settings): Record<string, Note<any>> => {
   return {
     ...iconNotes,
-    ting: new Note({
-      id: "ting",
-      Component: IconNote,
-      props: { Icon: CircleSmall, size: "48%", strokeWidth: 10 / 3 },
-    }),
     lslap: new Note({
       id: "lslap",
+      name: "Left Slap",
       Component: ArcNote,
       BackgroundComponent: OutlineCircleBackground,
       props: { side: "left" as const, fluid: true },
     }),
     rslap: new Note({
       id: "rslap",
+      name: "Right Slap",
       Component: ArcNote,
       BackgroundComponent: OutlineCircleBackground,
       props: { side: "right" as const, fluid: true },
@@ -121,6 +114,7 @@ export const getNotes = (settings: Settings): Record<string, Note<any>> => {
     ),
     mute: new Note({
       id: "mute",
+      name: "Mute",
       Component: BlankNote,
       BackgroundComponent: FilledCircleBackground,
     }),

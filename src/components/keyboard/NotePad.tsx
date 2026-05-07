@@ -14,14 +14,14 @@ interface NotePadProps {
 export function NotePad({ settings, activeMap, onTap }: NotePadProps) {
   return (
     <>
-      {Object.keys(getNotes(settings)).map((val) => {
-        const noteHand = activeMap.get(val);
+      {Object.entries(getNotes(settings)).map(([id, note]) => {
+        const noteHand = activeMap.get(id);
         const isActive = noteHand !== undefined;
         return (
           <button
             type="button"
-            key={val}
-            onClick={() => onTap(val)}
+            key={id}
+            onClick={() => onTap(id)}
             className={`shrink-0 w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-lg transition-colors border relative
               ${
                 isActive
@@ -29,10 +29,10 @@ export function NotePad({ settings, activeMap, onTap }: NotePadProps) {
                   : "bg-secondary hover:bg-accent text-foreground border-border"
               }`}
             style={isActive ? { color: handColor(noteHand) } : undefined}
-            title={val === "0" ? "Ding" : `Field ${val}`}
+            title={note.name}
           >
             <NoteGlyph
-              notes={[{ value: val, hand: noteHand ?? "none" }]}
+              notes={[{ value: id, hand: noteHand ?? "none" }]}
               settings={settings}
             />
           </button>
