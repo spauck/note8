@@ -112,12 +112,15 @@ const Index = () => {
     [setSearchParams],
   );
 
+  const gistSync = useGistSync();
+
   const handleSaved = useCallback(
     (name: string) => {
       setLoadedName(name);
       setLastSavedQuery(encodeState(state));
+      if (gistSync.enabled) gistSync.sync({ silent: true });
     },
-    [state],
+    [state, gistSync],
   );
 
   const handleNotesPerCountChange = useCallback(
