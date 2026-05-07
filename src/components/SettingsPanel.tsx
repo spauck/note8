@@ -35,6 +35,38 @@ const HAND_CONFIGS = [
 export function SettingsPanel() {
   const { settings, updateSettings } = useSettings();
   const [theme, setTheme] = useState<Theme>(loadTheme);
+  const [token, setTokenState] = useState<string>(getGistToken);
+  const [gistId, setGistIdState] = useState<string>(getGistId);
+  const [syncing, setSyncing] = useState(false);
+
+  const saveToken = () => {
+    setGistToken(token.trim());
+    toast.success(token.trim() ? "Token saved" : "Token cleared");
+  };
+
+  const runSync = async () => {
+    if (!getGistToken()) {
+      toast.error("Add a GitHub token first");
+      return;
+    }
+    setSyncing(true);
+    try {
+      const res = await syncWithGist();
+      setGistIdState(res.gistId);
+      toast.success(`Synced ${res.totalCount} composition${res.totalCount !== 1 ? "s" : ""}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const clearGistId = () => {
+    setGistId("");
+    setGistIdState("");
+    toast.success("Gist link cleared");
+  };
+
 
   const isDark = theme === "dark";
 
