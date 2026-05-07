@@ -12,6 +12,7 @@ import { ViewModeToggle } from "@/components/ViewModeToggle";
 import { readAutosave, useAutosave } from "@/hooks/useAutosave";
 import { useBarOperations } from "@/hooks/useBarOperations";
 import { useComposerState } from "@/hooks/useComposerState";
+import { useGistSync } from "@/hooks/useGistSync";
 import { useNoteAssignment } from "@/hooks/useNoteAssignment";
 import { useRowOperations } from "@/hooks/useRowOperations";
 import { encodeState } from "@/lib/composer-state";
