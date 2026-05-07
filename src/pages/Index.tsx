@@ -184,6 +184,9 @@ const Index = () => {
                   onExport={compositionManager.handleExport}
                   onImport={compositionManager.handleImport}
                   onReset={reset}
+                  onSyncGist={() => gistSync.sync()}
+                  gistEnabled={gistSync.enabled}
+                  gistSyncing={gistSync.syncing}
                 />
               )}
               <ViewModeToggle viewMode={viewMode} onToggle={toggleViewMode} />
