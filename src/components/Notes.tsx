@@ -36,6 +36,7 @@ export class Note<T> {
   readonly props?: T;
   readonly BackgroundComponent?: React.FC<BaseNoteProps>;
   readonly name: string;
+  readonly precedence: number;
 
   constructor({
     id,
@@ -43,17 +44,20 @@ export class Note<T> {
     Component,
     props,
     BackgroundComponent,
+    precedence,
   }: {
     id: string;
     name: string;
     Component: React.FC<T & BaseNoteProps>;
     props?: T;
     BackgroundComponent?: React.FC<BaseNoteProps>;
+    precedence: number;
   }) {
     this.id = id;
     this.name = name;
     this.Component = Component;
     this.props = props;
+    this.precedence = precedence;
     this.BackgroundComponent = BackgroundComponent;
   }
 }
@@ -71,6 +75,7 @@ const iconNotes = Object.fromEntries(
       name: key.charAt(0).toUpperCase() + key.slice(1),
       Component: IconNote,
       props: { Icon, size: "80%" },
+      precedence: 1,
     }),
   ]),
 );
@@ -87,6 +92,7 @@ const positionNotes = Array.from(
         size: 94,
         fluid: true,
       },
+      precedence: 5,
     }),
 );
 
@@ -99,6 +105,7 @@ export const getNotes = (settings: Settings): Record<string, Note<any>> => {
       Component: ArcNote,
       BackgroundComponent: OutlineCircleBackground,
       props: { side: "left" as const, fluid: true },
+      precedence: 2,
     }),
     rslap: new Note({
       id: "rslap",
@@ -106,6 +113,7 @@ export const getNotes = (settings: Settings): Record<string, Note<any>> => {
       Component: ArcNote,
       BackgroundComponent: OutlineCircleBackground,
       props: { side: "right" as const, fluid: true },
+      precedence: 2,
     }),
     ...Object.fromEntries(
       positionNotes
@@ -117,6 +125,7 @@ export const getNotes = (settings: Settings): Record<string, Note<any>> => {
       name: "Mute",
       Component: BlankNote,
       BackgroundComponent: FilledCircleBackground,
+      precedence: 0,
     }),
   };
 };

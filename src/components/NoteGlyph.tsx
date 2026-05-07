@@ -25,23 +25,27 @@ export const NoteGlyph = ({
           />
         </span>
       )}
-      {notes.map((noteValue, index) => {
-        const note = notesById[noteValue.value];
-        if (!note) return null;
-        return (
-          <span
-            key={`${noteValue.value}-${noteValue.hand}-${index}`}
-            className="absolute inset-0 flex items-center justify-center"
-          >
-            <note.Component
-              {...note.props}
-              noteId={noteValue.value}
-              hand={noteValue.hand}
-              settings={settings}
-            />
-          </span>
-        );
-      })}
+      {notes
+        .map((n) => [n.hand, notesById[n.value]] as const)
+        .filter(([, note]) => note)
+        .sort(([_, a], [__, b]) => {
+          return a.precedence - b.precedence;
+        })
+        .map(([hand, note], index) => {
+          return (
+            <span
+              key={`${note.id}-${hand}-${index}`}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <note.Component
+                {...note.props}
+                noteId={note.id}
+                hand={hand}
+                settings={settings}
+              />
+            </span>
+          );
+        })}
     </>
   );
 };
