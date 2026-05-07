@@ -1,5 +1,7 @@
-import { Moon, Settings, Sun } from "lucide-react";
+import { Cloud, Moon, Settings, Sun } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -7,6 +9,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  getGistId,
+  getGistToken,
+  setGistId,
+  setGistToken,
+  syncWithGist,
+} from "@/lib/gist-storage";
 import { useSettings } from "@/lib/settings";
 import { applyTheme, loadTheme, type Theme } from "@/lib/theme";
 
@@ -26,6 +35,38 @@ const HAND_CONFIGS = [
 export function SettingsPanel() {
   const { settings, updateSettings } = useSettings();
   const [theme, setTheme] = useState<Theme>(loadTheme);
+  const [token, setTokenState] = useState<string>(getGistToken);
+  const [gistId, setGistIdState] = useState<string>(getGistId);
+  const [syncing, setSyncing] = useState(false);
+
+  const saveToken = () => {
+    setGistToken(token.trim());
+    toast.success(token.trim() ? "Token saved" : "Token cleared");
+  };
+
+  const runSync = async () => {
+    if (!getGistToken()) {
+      toast.error("Add a GitHub token first");
+      return;
+    }
+    setSyncing(true);
+    try {
+      const res = await syncWithGist();
+      setGistIdState(res.gistId);
+      toast.success(`Synced ${res.totalCount} composition${res.totalCount !== 1 ? "s" : ""}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const clearGistId = () => {
+    setGistId("");
+    setGistIdState("");
+    toast.success("Gist link cleared");
+  };
+
 
   const isDark = theme === "dark";
 
@@ -163,6 +204,72 @@ export function SettingsPanel() {
                   Offset
                 </option>
               </select>
+            </div>
+          </section>
+
+          {/* GitHub Gist Sync */}
+          <section>
+            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <Cloud className="w-4 h-4" />
+              GitHub Gist Sync
+            </h3>
+            <p className="text-xs text-muted-foreground mb-2">
+              Paste a{" "}
+              <a
+                href="https://github.com/settings/tokens/new?scopes=gist&description=Handpan%20Composer"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-foreground"
+              >
+                personal access token
+              </a>{" "}
+              with the <code className="font-mono">gist</code> scope. Compositions
+              are merged with local storage by newest timestamp.
+            </p>
+            <div className="flex gap-2 mb-2">
+              <Input
+                type="password"
+                value={token}
+                onChange={(e) => setTokenState(e.target.value)}
+                placeholder="ghp_..."
+                className="text-xs font-mono"
+              />
+              <button
+                type="button"
+                onClick={saveToken}
+                className="text-xs px-3 py-1 rounded border border-border hover:border-ring/50 text-foreground"
+              >
+                Save
+              </button>
+            </div>
+            <div className="flex gap-2 items-center">
+              <button
+                type="button"
+                onClick={runSync}
+                disabled={syncing || !token.trim()}
+                className="text-xs px-3 py-1 rounded border border-border hover:border-ring/50 text-foreground disabled:opacity-50"
+              >
+                {syncing ? "Syncing..." : "Sync now"}
+              </button>
+              {gistId && (
+                <>
+                  <a
+                    href={`https://gist.github.com/${gistId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-muted-foreground hover:text-foreground underline truncate"
+                  >
+                    {gistId.slice(0, 10)}...
+                  </a>
+                  <button
+                    type="button"
+                    onClick={clearGistId}
+                    className="text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    Unlink
+                  </button>
+                </>
+              )}
             </div>
           </section>
         </div>

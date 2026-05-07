@@ -1,4 +1,5 @@
 import {
+  Cloud,
   Download,
   FilePlus,
   FolderOpen,
@@ -23,6 +24,9 @@ interface AppMenuProps {
   onExport: () => void;
   onImport: () => void;
   onReset: () => void;
+  onSyncGist?: () => void;
+  gistEnabled?: boolean;
+  gistSyncing?: boolean;
 }
 
 /** Top-right "≡" menu containing file/share actions. */
@@ -34,6 +38,9 @@ export function AppMenu({
   onExport,
   onImport,
   onReset,
+  onSyncGist,
+  gistEnabled,
+  gistSyncing,
 }: AppMenuProps) {
   return (
     <DropdownMenu>
@@ -70,6 +77,12 @@ export function AppMenu({
           <Upload className="w-3.5 h-3.5 mr-2" />
           Import
         </DropdownMenuItem>
+        {gistEnabled && onSyncGist && (
+          <DropdownMenuItem onClick={onSyncGist} disabled={gistSyncing}>
+            <Cloud className="w-3.5 h-3.5 mr-2" />
+            {gistSyncing ? "Syncing..." : "Sync Gist"}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={onReset}>
           <RotateCcw className="w-3.5 h-3.5 mr-2" />
           Reset

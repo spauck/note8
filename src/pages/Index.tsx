@@ -12,6 +12,7 @@ import { ViewModeToggle } from "@/components/ViewModeToggle";
 import { readAutosave, useAutosave } from "@/hooks/useAutosave";
 import { useBarOperations } from "@/hooks/useBarOperations";
 import { useComposerState } from "@/hooks/useComposerState";
+import { useGistSync } from "@/hooks/useGistSync";
 import { useNoteAssignment } from "@/hooks/useNoteAssignment";
 import { useRowOperations } from "@/hooks/useRowOperations";
 import { encodeState } from "@/lib/composer-state";
@@ -111,12 +112,15 @@ const Index = () => {
     [setSearchParams],
   );
 
+  const gistSync = useGistSync();
+
   const handleSaved = useCallback(
     (name: string) => {
       setLoadedName(name);
       setLastSavedQuery(encodeState(state));
+      if (gistSync.enabled) gistSync.sync({ silent: true });
     },
-    [state],
+    [state, gistSync],
   );
 
   const handleNotesPerCountChange = useCallback(
@@ -180,6 +184,9 @@ const Index = () => {
                   onExport={compositionManager.handleExport}
                   onImport={compositionManager.handleImport}
                   onReset={reset}
+                  onSyncGist={() => gistSync.sync()}
+                  gistEnabled={gistSync.enabled}
+                  gistSyncing={gistSync.syncing}
                 />
               )}
               <ViewModeToggle viewMode={viewMode} onToggle={toggleViewMode} />
