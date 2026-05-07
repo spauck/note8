@@ -206,6 +206,72 @@ export function SettingsPanel() {
               </select>
             </div>
           </section>
+
+          {/* GitHub Gist Sync */}
+          <section>
+            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <Cloud className="w-4 h-4" />
+              GitHub Gist Sync
+            </h3>
+            <p className="text-xs text-muted-foreground mb-2">
+              Paste a{" "}
+              <a
+                href="https://github.com/settings/tokens/new?scopes=gist&description=Handpan%20Composer"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-foreground"
+              >
+                personal access token
+              </a>{" "}
+              with the <code className="font-mono">gist</code> scope. Compositions
+              are merged with local storage by newest timestamp.
+            </p>
+            <div className="flex gap-2 mb-2">
+              <Input
+                type="password"
+                value={token}
+                onChange={(e) => setTokenState(e.target.value)}
+                placeholder="ghp_..."
+                className="text-xs font-mono"
+              />
+              <button
+                type="button"
+                onClick={saveToken}
+                className="text-xs px-3 py-1 rounded border border-border hover:border-ring/50 text-foreground"
+              >
+                Save
+              </button>
+            </div>
+            <div className="flex gap-2 items-center">
+              <button
+                type="button"
+                onClick={runSync}
+                disabled={syncing || !token.trim()}
+                className="text-xs px-3 py-1 rounded border border-border hover:border-ring/50 text-foreground disabled:opacity-50"
+              >
+                {syncing ? "Syncing..." : "Sync now"}
+              </button>
+              {gistId && (
+                <>
+                  <a
+                    href={`https://gist.github.com/${gistId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-muted-foreground hover:text-foreground underline truncate"
+                  >
+                    {gistId.slice(0, 10)}...
+                  </a>
+                  <button
+                    type="button"
+                    onClick={clearGistId}
+                    className="text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    Unlink
+                  </button>
+                </>
+              )}
+            </div>
+          </section>
         </div>
       </SheetContent>
     </Sheet>
