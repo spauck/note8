@@ -53,7 +53,9 @@ export function SettingsPanel() {
     try {
       const res = await syncWithGist();
       setGistIdState(res.gistId);
-      toast.success(`Synced ${res.totalCount} composition${res.totalCount !== 1 ? "s" : ""}`);
+      toast.success(
+        `Synced ${res.totalCount} composition${res.totalCount !== 1 ? "s" : ""}`,
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Sync failed");
     } finally {
@@ -66,7 +68,6 @@ export function SettingsPanel() {
     setGistIdState("");
     toast.success("Gist link cleared");
   };
-
 
   const isDark = theme === "dark";
 
@@ -223,8 +224,8 @@ export function SettingsPanel() {
               >
                 personal access token
               </a>{" "}
-              with the <code className="font-mono">gist</code> scope. Compositions
-              are merged with local storage by newest timestamp.
+              with the <code className="font-mono">gist</code> scope.
+              Compositions are merged with local storage by newest timestamp.
             </p>
             <div className="flex gap-2 mb-2">
               <Input
