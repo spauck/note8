@@ -1,5 +1,7 @@
-import { Moon, Settings, Sun } from "lucide-react";
+import { Cloud, Moon, Settings, Sun } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -7,6 +9,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  getGistId,
+  getGistToken,
+  setGistId,
+  setGistToken,
+  syncWithGist,
+} from "@/lib/gist-storage";
 import { useSettings } from "@/lib/settings";
 import { applyTheme, loadTheme, type Theme } from "@/lib/theme";
 
