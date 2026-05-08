@@ -1,22 +1,20 @@
 import { useEffect, useRef } from "react";
-import { type ComposerState, encodeState } from "@/lib/composer-state";
 
 export const AUTOSAVE_KEY = "handpan-composer-autosave";
 const AUTOSAVE_INTERVAL = 3000;
 
-/** Periodically persists the encoded composer state to localStorage. */
-export function useAutosave(state: ComposerState) {
+/** Periodically persists the URL query string (incl. composition name) to localStorage. */
+export function useAutosave(queryString: string) {
   const lastSavedRef = useRef("");
   useEffect(() => {
     const timer = setInterval(() => {
-      const q = encodeState(state);
-      if (q && q !== lastSavedRef.current) {
-        localStorage.setItem(AUTOSAVE_KEY, q);
-        lastSavedRef.current = q;
+      if (queryString && queryString !== lastSavedRef.current) {
+        localStorage.setItem(AUTOSAVE_KEY, queryString);
+        lastSavedRef.current = queryString;
       }
     }, AUTOSAVE_INTERVAL);
     return () => clearInterval(timer);
-  }, [state]);
+  }, [queryString]);
 
   const clear = () => {
     localStorage.removeItem(AUTOSAVE_KEY);

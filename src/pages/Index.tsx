@@ -52,13 +52,29 @@ const Index = () => {
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
   const [viewMode, setViewMode] = useState(false);
 
-  const [loadedName, setLoadedName] = useState<string | null>(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("name") || null;
-  });
+  const loadedName = searchParams.get("name");
+  const setLoadedName = useCallback(
+    (name: string | null) => {
+      const p = new URLSearchParams(searchParams);
+      if (name) p.set("name", name);
+      else p.delete("name");
+      setSearchParams(p, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
   const [lastSavedQuery, setLastSavedQuery] = useState<string | null>(null);
 
-  const autosave = useAutosave(state);
+  const autosave = useAutosave(searchParams.toString());
+
+  const isEmpty = useMemo(
+    () => state.bars.every((b) => b.beats.every((beat) => beat.length === 0)),
+    [state.bars],
+  );
+
+  // Ensure every non-empty composition has a name so it can be synced.
+  useEffect(() => {
+    if (!isEmpty && !loadedName) setLoadedName("Untitled");
+  }, [isEmpty, loadedName, setLoadedName]);
 
   const currentQuery = encodeState(state);
   const hasUnsavedChanges =
@@ -105,7 +121,6 @@ const Index = () => {
       const params = new URLSearchParams(queryString);
       params.set("name", name);
       setSearchParams(params.toString(), { replace: true });
-      setLoadedName(name);
       setLastSavedQuery(queryString);
       setSelectedCell(null);
     },
@@ -134,7 +149,6 @@ const Index = () => {
   const reset = useCallback(() => {
     setSearchParams("", { replace: true });
     setSelectedCell(null);
-    setLoadedName(null);
     setLastSavedQuery(null);
     autosave.clear();
   }, [setSearchParams, autosave]);
@@ -196,7 +210,7 @@ const Index = () => {
           </div>
 
           <div className="mb-6">
-            {!viewMode && (
+            {!viewMode && isEmpty && (
               <p className="text-sm text-muted-foreground mt-1">
                 Tap a cell, pick a position ·{" "}
                 <span className="text-hand-right">R</span> ·{" "}
