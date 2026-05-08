@@ -16,6 +16,7 @@ import { useGistSync } from "@/hooks/useGistSync";
 import { useNoteAssignment } from "@/hooks/useNoteAssignment";
 import { useRowOperations } from "@/hooks/useRowOperations";
 import { encodeState } from "@/lib/composer-state";
+import type { SavedComposition } from "@/lib/composition-storage";
 import {
   applyColorVars,
   loadSettings,
