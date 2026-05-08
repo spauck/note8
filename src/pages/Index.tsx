@@ -149,7 +149,6 @@ const Index = () => {
   const reset = useCallback(() => {
     setSearchParams("", { replace: true });
     setSelectedCell(null);
-    setLoadedName(null);
     setLastSavedQuery(null);
     autosave.clear();
   }, [setSearchParams, autosave]);
