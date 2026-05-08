@@ -172,8 +172,8 @@ const Index = () => {
         className={`min-h-screen bg-background p-3 sm:p-6 ${selectedCell && !viewMode ? "pb-28" : ""}`}
       >
         <div className="mx-auto">
-          <div className="mb-6 flex items-start justify-between">
-            <AppTitle viewMode={viewMode} loadedName={loadedName} />
+          <div className="mb-2 flex items-start justify-between gap-4">
+            <AppTitle />
             <div className="flex items-center gap-2">
               {!viewMode && (
                 <AppMenu
@@ -193,6 +193,25 @@ const Index = () => {
               <InfoDialog />
               {!viewMode && <SettingsPanel />}
             </div>
+          </div>
+
+          <div className="mb-6">
+            {!viewMode && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Tap a cell, pick a position ·{" "}
+                <span className="text-hand-right">R</span> ·{" "}
+                <span className="text-hand-left">L</span> ·{" "}
+                <span className="text-hand-any">A</span> ·{" "}
+                <span className="text-hand-none">N</span>
+              </p>
+            )}
+            {loadedName && (
+              <span className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  {loadedName}
+                </span>
+              </span>
+            )}
           </div>
 
           {!viewMode && (

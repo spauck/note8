@@ -24,7 +24,7 @@ export function InfoDialog() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl h-[100dvh] sm:h-[90vh] sm:max-h-[90vh] flex flex-col p-0 gap-0 sm:rounded-lg rounded-none">
           <DialogHeader className="px-6 pt-6 pb-3 border-b border-border shrink-0">
-            <DialogTitle>How to use Note∞</DialogTitle>
+            <DialogTitle>How to use Note8</DialogTitle>
           </DialogHeader>
           <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 text-sm text-foreground space-y-5 leading-relaxed">
             <section>
@@ -32,7 +32,7 @@ export function InfoDialog() {
                 Getting started
               </h3>
               <p className="text-muted-foreground">
-                Note∞ is a handpan composition tool. A composition is a sequence
+                Note8 is a handpan composition tool. A composition is a sequence
                 of <strong>bars</strong>, each containing <strong>beats</strong>
                 . Bars wrap into <strong>rows</strong> for readability.
               </p>

@@ -8,8 +8,7 @@ export default defineConfig(({ mode }) => {
   // Use the repo subpath only when explicitly building for GitHub Pages
   // (the deploy workflow sets DEPLOY_TARGET=gh-pages). Local dev, `npm run
   // build` previews, and the Lovable preview all serve from the root.
-  const base =
-    process.env.DEPLOY_TARGET === "gh-pages" ? "/handpan-muse/" : "/";
+  const base = process.env.DEPLOY_TARGET === "gh-pages" ? "/note8/" : "/";
 
   return {
     base,
