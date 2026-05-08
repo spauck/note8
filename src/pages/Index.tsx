@@ -120,11 +120,13 @@ const Index = () => {
   );
 
   const handleLoad = useCallback(
-    (queryString: string, name: string) => {
-      const params = new URLSearchParams(queryString);
-      params.set("name", name);
+    (comp: SavedComposition) => {
+      const params = new URLSearchParams(comp.queryString);
+      params.set("name", comp.name);
+      if (comp.id) params.set("id", comp.id);
+      else params.delete("id");
       setSearchParams(params.toString(), { replace: true });
-      setLastSavedQuery(queryString);
+      setLastSavedQuery(comp.queryString);
       setSelectedCell(null);
     },
     [setSearchParams],
@@ -133,12 +135,12 @@ const Index = () => {
   const gistSync = useGistSync();
 
   const handleSaved = useCallback(
-    (name: string) => {
-      setLoadedName(name);
+    (comp: SavedComposition) => {
+      setLoadedMeta(comp.id ?? null, comp.name);
       setLastSavedQuery(encodeState(state));
       if (gistSync.enabled) gistSync.sync({ silent: true });
     },
-    [state, gistSync],
+    [state, gistSync, setLoadedMeta],
   );
 
   const handleNotesPerCountChange = useCallback(
@@ -175,6 +177,7 @@ const Index = () => {
 
   const compositionManager = CompositionManager({
     state,
+    loadedId,
     loadedName,
     onLoad: handleLoad,
     hasUnsavedChanges,
