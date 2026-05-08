@@ -143,40 +143,33 @@ function mergeAndAssignIds(
   a: SavedComposition[],
   b: SavedComposition[],
 ): SavedComposition[] {
-  const byId = new Map<string, SavedComposition>();
-  const byName = new Map<string, SavedComposition>();
+  const all = [...a, ...b].filter((c) => c?.name && c?.queryString);
 
-  const upsert = (c: SavedComposition) => {
-    if (!c?.name || !c?.queryString) return;
-    // Prefer id-based matching. If this entry has no id but a same-name
-    // entry already does, adopt that id so we don't fork records.
-    let key = c.id;
-    if (!key) {
-      const sameName = byName.get(c.name);
-      if (sameName?.id) key = sameName.id;
-    }
-    const existing = key ? byId.get(key) : byName.get(c.name);
-    if (!existing || (c.savedAt ?? 0) > (existing.savedAt ?? 0)) {
-      const merged: SavedComposition = { ...c, id: key ?? c.id };
-      if (merged.id) byId.set(merged.id, merged);
-      byName.set(merged.name, merged);
-    }
-  };
+  // Pass 1: build a name -> id map from any entry that already has an id,
+  // so id-less entries can adopt the matching id.
+  const nameToId = new Map<string, string>();
+  for (const c of all) {
+    if (c.id && !nameToId.has(c.name)) nameToId.set(c.name, c.id);
+  }
 
-  for (const c of a) upsert(c);
-  for (const c of b) upsert(c);
-
-  // Collect: prefer id-keyed entries; include name-keyed ones that still
-  // lack an id, then mint ids for them.
-  const out = new Map<string, SavedComposition>();
-  for (const c of byId.values()) out.set(c.id as string, c);
-  for (const c of byName.values()) {
-    if (!c.id && !out.has(`name:${c.name}`)) {
-      const id = generateCompositionId();
-      out.set(id, { ...c, id });
+  // Pass 2: pick the newest entry per id (or per name when still id-less).
+  const byKey = new Map<string, SavedComposition>();
+  for (const c of all) {
+    const id = c.id ?? nameToId.get(c.name);
+    const key = id ?? `name:${c.name}`;
+    const candidate: SavedComposition = id ? { ...c, id } : c;
+    const existing = byKey.get(key);
+    if (!existing || (candidate.savedAt ?? 0) > (existing.savedAt ?? 0)) {
+      byKey.set(key, candidate);
     }
   }
-  return Array.from(out.values()).sort((x, y) => x.name.localeCompare(y.name));
+
+  // Pass 3: mint ids for anything still missing one.
+  const out: SavedComposition[] = [];
+  for (const c of byKey.values()) {
+    out.push(c.id ? c : { ...c, id: generateCompositionId() });
+  }
+  return out.sort((x, y) => x.name.localeCompare(y.name));
 }
 
 export interface SyncResult {
