@@ -94,6 +94,28 @@ async function writeRemoteCompositions(
   await gh(`/gists/${gistId}`, token, { method: "PATCH", body });
 }
 
+/** Find an existing gist owned by the authenticated user that matches our
+ *  description or filename. Lets multiple devices converge on the same gist
+ *  without sharing an ID manually. */
+async function findExistingGist(token: string): Promise<string | null> {
+  // Page through user's gists (most users have <100, but be defensive).
+  for (let page = 1; page <= 10; page++) {
+    const gists = await gh<GistResponse[]>(
+      `/gists?per_page=100&page=${page}`,
+      token,
+    );
+    if (!gists.length) break;
+    const match = gists.find(
+      (g) =>
+        (g as GistResponse & { description?: string }).description ===
+          GIST_DESCRIPTION || !!g.files?.[GIST_FILENAME],
+    );
+    if (match) return match.id;
+    if (gists.length < 100) break;
+  }
+  return null;
+}
+
 async function createGist(
   token: string,
   comps: SavedComposition[],
