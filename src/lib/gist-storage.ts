@@ -165,6 +165,14 @@ export async function syncWithGist(): Promise<SyncResult> {
   const local = listSavedCompositions();
   let gistId = getGistId();
   let remote: SavedComposition[] = [];
+  if (!gistId) {
+    // Try to discover an existing gist on this account before creating one.
+    const found = await findExistingGist(token);
+    if (found) {
+      gistId = found;
+      setGistId(found);
+    }
+  }
   if (gistId) {
     remote = await fetchRemoteCompositions(token, gistId);
   }
