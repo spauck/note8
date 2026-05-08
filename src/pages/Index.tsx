@@ -53,11 +53,14 @@ const Index = () => {
   const [viewMode, setViewMode] = useState(false);
 
   const loadedName = searchParams.get("name");
-  const setLoadedName = useCallback(
-    (name: string | null) => {
+  const loadedId = searchParams.get("id");
+  const setLoadedMeta = useCallback(
+    (id: string | null, name: string | null) => {
       const p = new URLSearchParams(searchParams);
       if (name) p.set("name", name);
       else p.delete("name");
+      if (id) p.set("id", id);
+      else p.delete("id");
       setSearchParams(p, { replace: true });
     },
     [searchParams, setSearchParams],
@@ -73,8 +76,8 @@ const Index = () => {
 
   // Ensure every non-empty composition has a name so it can be synced.
   useEffect(() => {
-    if (!isEmpty && !loadedName) setLoadedName("Untitled");
-  }, [isEmpty, loadedName, setLoadedName]);
+    if (!isEmpty && !loadedName) setLoadedMeta(loadedId, "Untitled");
+  }, [isEmpty, loadedName, loadedId, setLoadedMeta]);
 
   const currentQuery = encodeState(state);
   const hasUnsavedChanges =
