@@ -121,7 +121,6 @@ const Index = () => {
       const params = new URLSearchParams(queryString);
       params.set("name", name);
       setSearchParams(params.toString(), { replace: true });
-      setLoadedName(name);
       setLastSavedQuery(queryString);
       setSelectedCell(null);
     },
