@@ -206,10 +206,10 @@ export async function syncWithGist(): Promise<SyncResult> {
   if (gistId) {
     remote = await fetchRemoteCompositions(token, gistId);
   }
-  const merged = mergeByTimestamp(local, remote);
+  const merged = mergeAndAssignIds(local, remote);
 
   // Write merged to local
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+  writeSavedCompositions(merged);
 
   // Write merged to gist (create if needed)
   if (!gistId) {
