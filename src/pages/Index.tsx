@@ -210,7 +210,7 @@ const Index = () => {
           </div>
 
           <div className="mb-6">
-            {!viewMode && (
+            {!viewMode && isEmpty && (
               <p className="text-sm text-muted-foreground mt-1">
                 Tap a cell, pick a position ·{" "}
                 <span className="text-hand-right">R</span> ·{" "}
