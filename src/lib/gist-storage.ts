@@ -1,6 +1,8 @@
 import {
+  generateCompositionId,
   listSavedCompositions,
   type SavedComposition,
+  writeSavedCompositions,
 } from "./composition-storage";
 
 const TOKEN_KEY = "handpan-gist-token";
@@ -134,19 +136,47 @@ async function createGist(
   return gist.id;
 }
 
-function mergeByTimestamp(
+/** Merge by id when both sides have one; fall back to name-based matching
+ *  for legacy entries that haven't been assigned an id yet. After merging,
+ *  every entry is guaranteed to have an id. */
+function mergeAndAssignIds(
   a: SavedComposition[],
   b: SavedComposition[],
 ): SavedComposition[] {
-  const map = new Map<string, SavedComposition>();
-  for (const c of [...a, ...b]) {
-    if (!c?.name || !c?.queryString) continue;
-    const existing = map.get(c.name);
+  const byId = new Map<string, SavedComposition>();
+  const byName = new Map<string, SavedComposition>();
+
+  const upsert = (c: SavedComposition) => {
+    if (!c?.name || !c?.queryString) return;
+    // Prefer id-based matching. If this entry has no id but a same-name
+    // entry already does, adopt that id so we don't fork records.
+    let key = c.id;
+    if (!key) {
+      const sameName = byName.get(c.name);
+      if (sameName?.id) key = sameName.id;
+    }
+    const existing = key ? byId.get(key) : byName.get(c.name);
     if (!existing || (c.savedAt ?? 0) > (existing.savedAt ?? 0)) {
-      map.set(c.name, c);
+      const merged: SavedComposition = { ...c, id: key ?? c.id };
+      if (merged.id) byId.set(merged.id, merged);
+      byName.set(merged.name, merged);
+    }
+  };
+
+  for (const c of a) upsert(c);
+  for (const c of b) upsert(c);
+
+  // Collect: prefer id-keyed entries; include name-keyed ones that still
+  // lack an id, then mint ids for them.
+  const out = new Map<string, SavedComposition>();
+  for (const c of byId.values()) out.set(c.id as string, c);
+  for (const c of byName.values()) {
+    if (!c.id && !out.has(`name:${c.name}`)) {
+      const id = generateCompositionId();
+      out.set(id, { ...c, id });
     }
   }
-  return Array.from(map.values()).sort((x, y) => x.name.localeCompare(y.name));
+  return Array.from(out.values()).sort((x, y) => x.name.localeCompare(y.name));
 }
 
 export interface SyncResult {
