@@ -10,7 +10,7 @@ const GIST_ID_KEY = "handpan-gist-id";
 const GIST_FILENAME = "handpan-compositions.json";
 const GIST_DESCRIPTION = "Handpan Composer compositions";
 
-const STORAGE_KEY = "handpan-composer-saved";
+
 
 export function getGistToken(): string {
   return localStorage.getItem(TOKEN_KEY) ?? "";
