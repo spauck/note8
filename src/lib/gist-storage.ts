@@ -1,6 +1,8 @@
 import {
+  generateCompositionId,
   listSavedCompositions,
   type SavedComposition,
+  writeSavedCompositions,
 } from "./composition-storage";
 
 const TOKEN_KEY = "handpan-gist-token";
@@ -8,7 +10,7 @@ const GIST_ID_KEY = "handpan-gist-id";
 const GIST_FILENAME = "handpan-compositions.json";
 const GIST_DESCRIPTION = "Handpan Composer compositions";
 
-const STORAGE_KEY = "handpan-composer-saved";
+
 
 export function getGistToken(): string {
   return localStorage.getItem(TOKEN_KEY) ?? "";
@@ -134,19 +136,40 @@ async function createGist(
   return gist.id;
 }
 
-function mergeByTimestamp(
+/** Merge by id when both sides have one; fall back to name-based matching
+ *  for legacy entries that haven't been assigned an id yet. After merging,
+ *  every entry is guaranteed to have an id. */
+function mergeAndAssignIds(
   a: SavedComposition[],
   b: SavedComposition[],
 ): SavedComposition[] {
-  const map = new Map<string, SavedComposition>();
-  for (const c of [...a, ...b]) {
-    if (!c?.name || !c?.queryString) continue;
-    const existing = map.get(c.name);
-    if (!existing || (c.savedAt ?? 0) > (existing.savedAt ?? 0)) {
-      map.set(c.name, c);
+  const all = [...a, ...b].filter((c) => c?.name && c?.queryString);
+
+  // Pass 1: build a name -> id map from any entry that already has an id,
+  // so id-less entries can adopt the matching id.
+  const nameToId = new Map<string, string>();
+  for (const c of all) {
+    if (c.id && !nameToId.has(c.name)) nameToId.set(c.name, c.id);
+  }
+
+  // Pass 2: pick the newest entry per id (or per name when still id-less).
+  const byKey = new Map<string, SavedComposition>();
+  for (const c of all) {
+    const id = c.id ?? nameToId.get(c.name);
+    const key = id ?? `name:${c.name}`;
+    const candidate: SavedComposition = id ? { ...c, id } : c;
+    const existing = byKey.get(key);
+    if (!existing || (candidate.savedAt ?? 0) > (existing.savedAt ?? 0)) {
+      byKey.set(key, candidate);
     }
   }
-  return Array.from(map.values()).sort((x, y) => x.name.localeCompare(y.name));
+
+  // Pass 3: mint ids for anything still missing one.
+  const out: SavedComposition[] = [];
+  for (const c of byKey.values()) {
+    out.push(c.id ? c : { ...c, id: generateCompositionId() });
+  }
+  return out.sort((x, y) => x.name.localeCompare(y.name));
 }
 
 export interface SyncResult {
@@ -176,10 +199,10 @@ export async function syncWithGist(): Promise<SyncResult> {
   if (gistId) {
     remote = await fetchRemoteCompositions(token, gistId);
   }
-  const merged = mergeByTimestamp(local, remote);
+  const merged = mergeAndAssignIds(local, remote);
 
   // Write merged to local
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+  writeSavedCompositions(merged);
 
   // Write merged to gist (create if needed)
   if (!gistId) {

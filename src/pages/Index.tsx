@@ -16,6 +16,7 @@ import { useGistSync } from "@/hooks/useGistSync";
 import { useNoteAssignment } from "@/hooks/useNoteAssignment";
 import { useRowOperations } from "@/hooks/useRowOperations";
 import { encodeState } from "@/lib/composer-state";
+import type { SavedComposition } from "@/lib/composition-storage";
 import {
   applyColorVars,
   loadSettings,
@@ -53,11 +54,14 @@ const Index = () => {
   const [viewMode, setViewMode] = useState(false);
 
   const loadedName = searchParams.get("name");
-  const setLoadedName = useCallback(
-    (name: string | null) => {
+  const loadedId = searchParams.get("id");
+  const setLoadedMeta = useCallback(
+    (id: string | null, name: string | null) => {
       const p = new URLSearchParams(searchParams);
       if (name) p.set("name", name);
       else p.delete("name");
+      if (id) p.set("id", id);
+      else p.delete("id");
       setSearchParams(p, { replace: true });
     },
     [searchParams, setSearchParams],
@@ -73,8 +77,8 @@ const Index = () => {
 
   // Ensure every non-empty composition has a name so it can be synced.
   useEffect(() => {
-    if (!isEmpty && !loadedName) setLoadedName("Untitled");
-  }, [isEmpty, loadedName, setLoadedName]);
+    if (!isEmpty && !loadedName) setLoadedMeta(loadedId, "Untitled");
+  }, [isEmpty, loadedName, loadedId, setLoadedMeta]);
 
   const currentQuery = encodeState(state);
   const hasUnsavedChanges =
@@ -117,11 +121,13 @@ const Index = () => {
   );
 
   const handleLoad = useCallback(
-    (queryString: string, name: string) => {
-      const params = new URLSearchParams(queryString);
-      params.set("name", name);
+    (comp: SavedComposition) => {
+      const params = new URLSearchParams(comp.queryString);
+      params.set("name", comp.name);
+      if (comp.id) params.set("id", comp.id);
+      else params.delete("id");
       setSearchParams(params.toString(), { replace: true });
-      setLastSavedQuery(queryString);
+      setLastSavedQuery(comp.queryString);
       setSelectedCell(null);
     },
     [setSearchParams],
@@ -130,12 +136,12 @@ const Index = () => {
   const gistSync = useGistSync();
 
   const handleSaved = useCallback(
-    (name: string) => {
-      setLoadedName(name);
+    (comp: SavedComposition) => {
+      setLoadedMeta(comp.id ?? null, comp.name);
       setLastSavedQuery(encodeState(state));
       if (gistSync.enabled) gistSync.sync({ silent: true });
     },
-    [state, gistSync],
+    [state, gistSync, setLoadedMeta],
   );
 
   const handleNotesPerCountChange = useCallback(
@@ -172,6 +178,7 @@ const Index = () => {
 
   const compositionManager = CompositionManager({
     state,
+    loadedId,
     loadedName,
     onLoad: handleLoad,
     hasUnsavedChanges,

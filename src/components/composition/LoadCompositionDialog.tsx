@@ -41,7 +41,7 @@ export function LoadCompositionDialog({
           <div className="max-h-60 overflow-y-auto space-y-1">
             {compositions.map((comp) => (
               <div
-                key={comp.name}
+                key={comp.id ?? `name:${comp.name}`}
                 className="flex items-center justify-between px-3 py-2 rounded hover:bg-accent/50 transition-colors group"
               >
                 <button

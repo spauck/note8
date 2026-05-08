@@ -5,25 +5,27 @@ import { SaveCompositionDialog } from "@/components/composition/SaveCompositionD
 import { useCompositionFileIO } from "@/hooks/useCompositionFileIO";
 import { type ComposerState, encodeState } from "@/lib/composer-state";
 import {
-  compositionExists,
   deleteComposition,
   listSavedCompositions,
+  nameCollidesWith,
   type SavedComposition,
   saveComposition,
 } from "@/lib/composition-storage";
 
 interface Props {
   state: ComposerState;
+  loadedId: string | null;
   loadedName: string | null;
-  onLoad: (queryString: string, name: string) => void;
+  onLoad: (comp: SavedComposition) => void;
   hasUnsavedChanges: boolean;
-  onSaved: (name: string) => void;
+  onSaved: (comp: SavedComposition) => void;
 }
 
 /** Coordinates save/load/export/import dialogs and returns hooks for the
  * caller to attach action buttons to. */
 export function CompositionManager({
   state,
+  loadedId,
   loadedName,
   onLoad,
   hasUnsavedChanges,
@@ -39,25 +41,30 @@ export function CompositionManager({
     setSaveOpen(true);
   }, [loadedName]);
 
+  const persist = useCallback(
+    (name: string) => {
+      const entry = saveComposition(name, encodeState(state), loadedId);
+      onSaved(entry);
+      setSaveOpen(false);
+    },
+    [state, loadedId, onSaved],
+  );
+
   const doSave = useCallback(() => {
     const trimmed = saveName.trim();
     if (!trimmed) return;
-    if (compositionExists(trimmed) && trimmed !== loadedName) {
+    // Collision only matters when we'd be overwriting a *different* record.
+    if (nameCollidesWith(trimmed, loadedId)) {
       setConfirmOverwrite(true);
       return;
     }
-    saveComposition(trimmed, encodeState(state));
-    onSaved(trimmed);
-    setSaveOpen(false);
-  }, [saveName, state, loadedName, onSaved]);
+    persist(trimmed);
+  }, [saveName, loadedId, persist]);
 
   const confirmAndSave = useCallback(() => {
-    const trimmed = saveName.trim();
-    saveComposition(trimmed, encodeState(state));
-    onSaved(trimmed);
+    persist(saveName.trim());
     setConfirmOverwrite(false);
-    setSaveOpen(false);
-  }, [saveName, state, onSaved]);
+  }, [saveName, persist]);
 
   /* Load flow */
   const [loadOpen, setLoadOpen] = useState(false);
@@ -77,7 +84,7 @@ export function CompositionManager({
       if (hasUnsavedChanges) {
         setPendingLoad(comp);
       } else {
-        onLoad(comp.queryString, comp.name);
+        onLoad(comp);
         setLoadOpen(false);
       }
     },
@@ -86,7 +93,7 @@ export function CompositionManager({
 
   const confirmLoad = useCallback(() => {
     if (pendingLoad) {
-      onLoad(pendingLoad.queryString, pendingLoad.name);
+      onLoad(pendingLoad);
       setPendingLoad(null);
       setLoadOpen(false);
     }
@@ -94,7 +101,7 @@ export function CompositionManager({
 
   const confirmDelete = useCallback(() => {
     if (deleteTarget) {
-      deleteComposition(deleteTarget.name);
+      deleteComposition(deleteTarget);
       setCompositions(listSavedCompositions());
       setDeleteTarget(null);
     }
