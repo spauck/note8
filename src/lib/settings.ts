@@ -7,6 +7,8 @@ export interface Settings {
   anyHandColor: string;
   panscriptFields: number;
   panscriptFieldOffset: number;
+  scaleDing: string;
+  scaleNotes: string;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -15,6 +17,8 @@ const DEFAULT_SETTINGS: Settings = {
   anyHandColor: "140 60% 45%",
   panscriptFields: 8,
   panscriptFieldOffset: 0,
+  scaleDing: "D3",
+  scaleNotes: "A3 A#3 C4 D4 E4 F4 G4 A4",
 };
 
 const STORAGE_KEY = "handpan-settings";

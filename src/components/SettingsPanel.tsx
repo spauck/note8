@@ -206,7 +206,40 @@ export function SettingsPanel() {
                 </option>
               </select>
             </div>
+            <p className="text-xs text-muted-foreground mt-3 mb-2">
+              Scale (ding / tone fields). Notes are letters A–G with optional
+              # or b and an octave 0–9, e.g. <code>D3</code>.
+            </p>
+            <div className="flex flex-row gap-1 items-center">
+              <Input
+                value={settings.scaleDing}
+                onChange={(e) => {
+                  updateSettings({ ...settings, scaleDing: e.target.value });
+                }}
+                placeholder="D3"
+                className="text-xs font-mono w-20"
+              />
+              <span className="text-muted-foreground">/</span>
+              <Input
+                value={settings.scaleNotes}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const count = value.split(/\s+/).filter(Boolean).length;
+                  updateSettings({
+                    ...settings,
+                    scaleNotes: value,
+                    panscriptFields:
+                      count >= 1 && count <= 12
+                        ? count
+                        : settings.panscriptFields,
+                  });
+                }}
+                placeholder="A3 A#3 C4 D4 E4 F4 G4 A4"
+                className="text-xs font-mono flex-1"
+              />
+            </div>
           </section>
+
 
           {/* GitHub Gist Sync */}
           <section>
