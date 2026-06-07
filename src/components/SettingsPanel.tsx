@@ -1,5 +1,5 @@
-import { Cloud, Moon, Settings, Sun } from "lucide-react";
-import { useState } from "react";
+import { Cloud, Moon, Plus, Settings, Sun, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +16,13 @@ import {
   setGistToken,
   syncWithGist,
 } from "@/lib/gist-storage";
+import {
+  deleteScale,
+  generateScaleId,
+  listScales,
+  type SavedScale,
+  upsertScale,
+} from "@/lib/scale-library";
 import { useSettings } from "@/lib/settings";
 import { applyTheme, loadTheme, type Theme } from "@/lib/theme";
 
@@ -38,6 +45,14 @@ export function SettingsPanel() {
   const [token, setTokenState] = useState<string>(getGistToken);
   const [gistId, setGistIdState] = useState<string>(getGistId);
   const [syncing, setSyncing] = useState(false);
+  const [scales, setScales] = useState<SavedScale[]>(listScales);
+
+  const refreshScales = () => setScales(listScales());
+
+  useEffect(() => {
+    // Refresh when sheet opens / settings change so external edits show up.
+    refreshScales();
+  }, []);
 
   const saveToken = () => {
     setGistToken(token.trim());
@@ -53,6 +68,7 @@ export function SettingsPanel() {
     try {
       const res = await syncWithGist();
       setGistIdState(res.gistId);
+      refreshScales();
       toast.success(
         `Synced ${res.totalCount} composition${res.totalCount !== 1 ? "s" : ""}`,
       );
@@ -77,15 +93,46 @@ export function SettingsPanel() {
     setTheme(next);
   };
 
-  const getPresetHsl = (preset: (typeof COLOR_PRESETS)[number]) => preset.hsl;
-  // theme is read just to re-render swatch active state when needed
-  void isDark;
-
   const setColor = (
     hand: "rightHandColor" | "leftHandColor" | "anyHandColor",
     hsl: string,
   ) => {
     updateSettings({ ...settings, [hand]: hsl });
+  };
+
+  const updateScaleField = (
+    id: string,
+    patch: Partial<Pick<SavedScale, "name" | "ding" | "notes">>,
+  ) => {
+    const existing = scales.find((s) => s.id === id);
+    if (!existing) return;
+    upsertScale({ ...existing, ...patch });
+    refreshScales();
+  };
+
+  const addScale = () => {
+    const entry = upsertScale({
+      id: generateScaleId(),
+      name: `Scale ${scales.length + 1}`,
+      ding: "D3",
+      notes: "A3 A#3 C4 D4 E4 F4 G4 A4",
+    });
+    refreshScales();
+    if (!settings.activeScaleId) {
+      updateSettings({ ...settings, activeScaleId: entry.id });
+    }
+  };
+
+  const removeScale = (id: string) => {
+    deleteScale(id);
+    refreshScales();
+    if (settings.activeScaleId === id) {
+      const remaining = listScales();
+      updateSettings({
+        ...settings,
+        activeScaleId: remaining[0]?.id ?? null,
+      });
+    }
   };
 
   return (
@@ -137,13 +184,12 @@ export function SettingsPanel() {
                   </span>
                   <div className="flex gap-1.5">
                     {COLOR_PRESETS.map((preset) => {
-                      const hsl = getPresetHsl(preset);
-                      const isActive = settings[key] === hsl;
+                      const isActive = settings[key] === preset.hsl;
                       return (
                         <button
                           key={preset.label}
                           type="button"
-                          onClick={() => setColor(key, hsl)}
+                          onClick={() => setColor(key, preset.hsl)}
                           className={`flex items-center gap-1.5 px-0.5 py-0.5 rounded-full text-xs border-2 transition-colors ${
                             isActive
                               ? "border-ring bg-accent text-foreground font-semibold"
@@ -152,7 +198,7 @@ export function SettingsPanel() {
                         >
                           <span
                             className="w-3 h-3 rounded-full shrink-0"
-                            style={{ backgroundColor: `hsl(${hsl})` }}
+                            style={{ backgroundColor: `hsl(${preset.hsl})` }}
                           />
                         </button>
                       );
@@ -206,40 +252,79 @@ export function SettingsPanel() {
                 </option>
               </select>
             </div>
-            <p className="text-xs text-muted-foreground mt-3 mb-2">
-              Scale (ding / tone fields). Notes are letters A–G with optional
-              # or b and an octave 0–9, e.g. <code>D3</code>.
-            </p>
-            <div className="flex flex-row gap-1 items-center">
-              <Input
-                value={settings.scaleDing}
-                onChange={(e) => {
-                  updateSettings({ ...settings, scaleDing: e.target.value });
-                }}
-                placeholder="D3"
-                className="text-xs font-mono w-20"
-              />
-              <span className="text-muted-foreground">/</span>
-              <Input
-                value={settings.scaleNotes}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  const count = value.split(/\s+/).filter(Boolean).length;
-                  updateSettings({
-                    ...settings,
-                    scaleNotes: value,
-                    panscriptFields:
-                      count >= 1 && count <= 12
-                        ? count
-                        : settings.panscriptFields,
-                  });
-                }}
-                placeholder="A3 A#3 C4 D4 E4 F4 G4 A4"
-                className="text-xs font-mono flex-1"
-              />
-            </div>
           </section>
 
+          {/* Scale Library */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-foreground">
+                Scale Library
+              </h3>
+              <button
+                type="button"
+                onClick={addScale}
+                className="text-xs px-2 py-1 rounded border border-border hover:border-ring/50 text-foreground flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3" /> Add
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              Notes are letters A–G with optional # or b and an octave 0–9,
+              e.g. <code>D3</code>. Assign scales to compositions via the
+              picker next to the title.
+            </p>
+            <div className="space-y-3">
+              {scales.length === 0 && (
+                <p className="text-xs text-muted-foreground italic">
+                  No scales yet. Tap "Add" to create one.
+                </p>
+              )}
+              {scales.map((s) => (
+                <div
+                  key={s.id}
+                  className="border border-border rounded p-2 space-y-1.5"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      value={s.name}
+                      onChange={(e) =>
+                        updateScaleField(s.id, { name: e.target.value })
+                      }
+                      placeholder="Scale name"
+                      className="text-xs h-7 flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeScale(s.id)}
+                      className="text-muted-foreground hover:text-destructive p-1"
+                      title="Delete scale"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Input
+                      value={s.ding}
+                      onChange={(e) =>
+                        updateScaleField(s.id, { ding: e.target.value })
+                      }
+                      placeholder="D3"
+                      className="text-xs h-7 font-mono w-16"
+                    />
+                    <span className="text-muted-foreground">/</span>
+                    <Input
+                      value={s.notes}
+                      onChange={(e) =>
+                        updateScaleField(s.id, { notes: e.target.value })
+                      }
+                      placeholder="A3 A#3 C4 D4 E4 F4 G4 A4"
+                      className="text-xs h-7 font-mono flex-1"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
 
           {/* GitHub Gist Sync */}
           <section>
@@ -258,7 +343,8 @@ export function SettingsPanel() {
                 personal access token
               </a>{" "}
               with the <code className="font-mono">gist</code> scope.
-              Compositions are merged with local storage by newest timestamp.
+              Compositions and scales merge with local storage by newest
+              timestamp.
             </p>
             <div className="flex gap-2 mb-2">
               <Input
