@@ -14,6 +14,12 @@ export interface Bar {
 export interface ComposerState {
   notesPerCount: number;
   bars: Bar[];
+  /** Optional ding note (e.g. "D3"). When set together with `scaleNotes`,
+   *  fully defines the composition's scale, overriding the active library
+   *  scale. */
+  ding?: string;
+  /** Optional space-separated scale notes (e.g. "A3 A#3 C4 D4 E4 F4 G4 A4"). */
+  scaleNotes?: string;
 }
 
 const DEFAULT_BEATS_PER_BAR = 4;
@@ -77,6 +83,9 @@ export function encodeState(state: ComposerState): string {
   const bars = state.bars.map(encodeBar).join(barSplit);
   const parts = [`n=${state.notesPerCount}`];
   if (bars) parts.push(`bars=${encodeURIComponent(bars)}`);
+  if (state.ding) parts.push(`ding=${encodeURIComponent(state.ding)}`);
+  if (state.scaleNotes)
+    parts.push(`scale=${encodeURIComponent(state.scaleNotes)}`);
   return parts.join("&");
 }
 
@@ -84,6 +93,8 @@ export function decodeState(search: string): ComposerState {
   const params = new URLSearchParams(search);
   const n = parseInt(params.get("n") || "2", 10) || 2;
   const barsParam = params.get("bars");
+  const ding = params.get("ding") || undefined;
+  const scaleNotes = params.get("scale") || undefined;
 
   if (barsParam) {
     const bars = barsParam
@@ -93,7 +104,7 @@ export function decodeState(search: string): ComposerState {
     if (bars.length > 0) {
       // Ensure the very first bar starts a row.
       bars[0] = { ...bars[0], breakBefore: true };
-      return { notesPerCount: n, bars };
+      return { notesPerCount: n, bars, ding, scaleNotes };
     }
   }
 

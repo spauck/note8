@@ -120,3 +120,43 @@ export function inferChord(
   }
   return null;
 }
+
+/** Transpose a list of note ids ("0" = ding, 1..N = scale positions) from
+ *  one ding+scale to another. If the new scale contains a note at the same
+ *  semitone interval as in the source scale, that position is used. Otherwise
+ *  the same positional index is kept (clamped); ids that can't be mapped
+ *  at all are dropped. */
+export function transposeNoteIds(
+  ids: string[],
+  fromDing: ParsedNote | null,
+  fromScale: ParsedNote[],
+  toDing: ParsedNote | null,
+  toScale: ParsedNote[],
+): string[] {
+  const out: string[] = [];
+  for (const id of ids) {
+    const n = parseInt(id, 10);
+    if (Number.isNaN(n)) continue;
+    if (n === 0) {
+      if (toDing) out.push("0");
+      continue;
+    }
+    if (n < 1 || n > fromScale.length) continue;
+    const sourceNote = fromScale[n - 1];
+    // Interval from source ding (fallback to first scale note).
+    const refFrom = fromDing ?? fromScale[0];
+    const refTo = toDing ?? toScale[0];
+    if (refFrom && refTo) {
+      const interval = sourceNote.semitone - refFrom.semitone;
+      const targetSemi = refTo.semitone + interval;
+      const exact = toScale.findIndex((t) => t.semitone === targetSemi);
+      if (exact >= 0) {
+        out.push(String(exact + 1));
+        continue;
+      }
+    }
+    // Fall back to same positional index.
+    if (n <= toScale.length) out.push(String(n));
+  }
+  return out;
+}
