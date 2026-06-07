@@ -4,11 +4,18 @@ import {
   type SavedComposition,
   writeSavedCompositions,
 } from "./composition-storage";
+import {
+  listScales,
+  mergeScales,
+  type SavedScale,
+  writeScales,
+} from "./scale-library";
 
 const TOKEN_KEY = "handpan-gist-token";
 const GIST_ID_KEY = "handpan-gist-id";
 const GIST_FILENAME = "handpan-compositions.json";
 const GIST_DESCRIPTION = "Handpan Composer compositions";
+
 
 
 
@@ -63,13 +70,18 @@ async function gh<T>(
   return (await res.json()) as T;
 }
 
-async function fetchRemoteCompositions(
+interface RemotePayload {
+  compositions: SavedComposition[];
+  scales: SavedScale[];
+}
+
+async function fetchRemote(
   token: string,
   gistId: string,
-): Promise<SavedComposition[]> {
+): Promise<RemotePayload> {
   const gist = await gh<GistResponse>(`/gists/${gistId}`, token);
   const file = gist.files[GIST_FILENAME] ?? Object.values(gist.files)[0];
-  if (!file) return [];
+  if (!file) return { compositions: [], scales: [] };
   let content = file.content;
   if (file.truncated && file.raw_url) {
     const r = await fetch(file.raw_url);
@@ -77,20 +89,31 @@ async function fetchRemoteCompositions(
   }
   try {
     const parsed = JSON.parse(content);
-    return Array.isArray(parsed) ? (parsed as SavedComposition[]) : [];
+    // Legacy format: bare array of compositions.
+    if (Array.isArray(parsed)) {
+      return { compositions: parsed as SavedComposition[], scales: [] };
+    }
+    return {
+      compositions: Array.isArray(parsed?.compositions)
+        ? (parsed.compositions as SavedComposition[])
+        : [],
+      scales: Array.isArray(parsed?.scales)
+        ? (parsed.scales as SavedScale[])
+        : [],
+    };
   } catch {
-    return [];
+    return { compositions: [], scales: [] };
   }
 }
 
-async function writeRemoteCompositions(
+async function writeRemote(
   token: string,
   gistId: string,
-  comps: SavedComposition[],
+  payload: RemotePayload,
 ): Promise<void> {
   const body = JSON.stringify({
     files: {
-      [GIST_FILENAME]: { content: JSON.stringify(comps, null, 2) },
+      [GIST_FILENAME]: { content: JSON.stringify(payload, null, 2) },
     },
   });
   await gh(`/gists/${gistId}`, token, { method: "PATCH", body });
