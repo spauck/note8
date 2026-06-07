@@ -7,6 +7,7 @@ import { CompositionManager } from "@/components/CompositionManager";
 import { InfoDialog } from "@/components/InfoDialog";
 import { NotesPerCountSelect } from "@/components/NotesPerCountSelect";
 import { PositionKeyboard } from "@/components/PositionKeyboard";
+import { ScalePicker } from "@/components/ScalePicker";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ViewModeToggle } from "@/components/ViewModeToggle";
 import { readAutosave, useAutosave } from "@/hooks/useAutosave";
@@ -17,6 +18,12 @@ import { useNoteAssignment } from "@/hooks/useNoteAssignment";
 import { useRowOperations } from "@/hooks/useRowOperations";
 import { encodeState } from "@/lib/composer-state";
 import type { SavedComposition } from "@/lib/composition-storage";
+import { parseNote, parseScaleNotes, transposeNoteIds } from "@/lib/scale";
+import {
+  ensureDefaultScale,
+  listScales,
+  type SavedScale,
+} from "@/lib/scale-library";
 import {
   applyColorVars,
   loadSettings,
@@ -49,9 +56,29 @@ const Index = () => {
     }
   }, [initialQuery, searchParams, setSearchParams]);
 
-  const [settings, setSettings] = useState<Settings>(loadSettings);
+  const [baseSettings, setBaseSettings] = useState<Settings>(loadSettings);
+  const [scales, setScales] = useState<SavedScale[]>(listScales);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
   const [viewMode, setViewMode] = useState(false);
+
+  // First-run migration: if the library is empty, seed it from the legacy
+  // scaleDing/scaleNotes settings and adopt that as the active scale.
+  useEffect(() => {
+    if (scales.length === 0) {
+      const seed = ensureDefaultScale(
+        baseSettings.scaleDing,
+        baseSettings.scaleNotes,
+      );
+      const next = listScales();
+      setScales(next);
+      if (!baseSettings.activeScaleId) {
+        const updated = { ...baseSettings, activeScaleId: seed.id };
+        setBaseSettings(updated);
+        saveSettings(updated);
+      }
+    }
+    // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot
+  }, []);
 
   const loadedName = searchParams.get("name");
   const loadedId = searchParams.get("id");
@@ -75,6 +102,41 @@ const Index = () => {
     [state.bars],
   );
 
+  // Resolve the effective scale: URL override > active library scale > legacy.
+  const effectiveScale = useMemo(() => {
+    if (state.ding && state.scaleNotes) {
+      return { ding: state.ding, notes: state.scaleNotes };
+    }
+    const active =
+      scales.find((s) => s.id === baseSettings.activeScaleId) ?? scales[0];
+    if (active) return { ding: active.ding, notes: active.notes };
+    return { ding: baseSettings.scaleDing, notes: baseSettings.scaleNotes };
+  }, [
+    state.ding,
+    state.scaleNotes,
+    scales,
+    baseSettings.activeScaleId,
+    baseSettings.scaleDing,
+    baseSettings.scaleNotes,
+  ]);
+
+  // Settings exposed to the rest of the tree carry the effective scale and
+  // a notesPerCount derived from it, so chord inference and the keyboard
+  // both use the composition's actual scale.
+  const effectiveSettings = useMemo<Settings>(() => {
+    const noteCount = effectiveScale.notes.trim().split(/\s+/).filter(Boolean)
+      .length;
+    return {
+      ...baseSettings,
+      scaleDing: effectiveScale.ding,
+      scaleNotes: effectiveScale.notes,
+      panscriptFields:
+        noteCount >= 1 && noteCount <= 12
+          ? noteCount
+          : baseSettings.panscriptFields,
+    };
+  }, [baseSettings, effectiveScale]);
+
   // Ensure every non-empty composition has a name so it can be synced.
   useEffect(() => {
     if (!isEmpty && !loadedName) setLoadedMeta(loadedId, "Untitled");
@@ -88,14 +150,26 @@ const Index = () => {
 
   useEffect(() => {
     applyTheme(loadTheme());
-    applyColorVars(settings);
-  }, [settings]);
+    applyColorVars(effectiveSettings);
+  }, [effectiveSettings]);
 
-  const handleUpdateSettings = useCallback((s: Settings) => {
-    setSettings(s);
-    saveSettings(s);
-    applyColorVars(s);
-  }, []);
+  const handleUpdateSettings = useCallback(
+    (s: Settings) => {
+      // Strip the effective-scale overrides — those live on the composition
+      // or in the active library entry, not in saved settings.
+      const persisted: Settings = {
+        ...s,
+        scaleDing: baseSettings.scaleDing,
+        scaleNotes: baseSettings.scaleNotes,
+      };
+      setBaseSettings(persisted);
+      saveSettings(persisted);
+      applyColorVars(persisted);
+      // The library may have changed via the panel; refresh.
+      setScales(listScales());
+    },
+    [baseSettings.scaleDing, baseSettings.scaleNotes],
+  );
 
   const handleSelectCell = useCallback((cell: SelectedCell | null) => {
     setSelectedCell(cell);
@@ -133,7 +207,7 @@ const Index = () => {
     [setSearchParams],
   );
 
-  const gistSync = useGistSync();
+  const gistSync = useGistSync(() => setScales(listScales()));
 
   const handleSaved = useCallback(
     (comp: SavedComposition) => {
@@ -176,6 +250,59 @@ const Index = () => {
     });
   }, []);
 
+  // Transpose every note in the composition into the target scale, and
+  // write the new scale into the URL so it persists with the composition.
+  const pickScale = useCallback(
+    (target: SavedScale) => {
+      const fromDing = parseNote(effectiveScale.ding);
+      const fromNotes = parseScaleNotes(effectiveScale.notes);
+      const toDing = parseNote(target.ding);
+      const toNotes = parseScaleNotes(target.notes);
+
+      const newBars = state.bars.map((bar) => ({
+        ...bar,
+        beats: bar.beats.map((beat) => {
+          if (beat.length === 0) return beat;
+          const ids = beat.map((n) => n.value);
+          const mapped = transposeNoteIds(
+            ids,
+            fromDing,
+            fromNotes,
+            toDing,
+            toNotes,
+          );
+          // Preserve hand assignments by index; drop notes that couldn't map.
+          const out = [] as typeof beat;
+          let j = 0;
+          for (let i = 0; i < beat.length && j < mapped.length; i++) {
+            out.push({ ...beat[i], value: mapped[j] });
+            j++;
+          }
+          return out;
+        }),
+      }));
+
+      const noteCount = target.notes.trim().split(/\s+/).filter(Boolean).length;
+
+      updateState({
+        ...state,
+        bars: newBars,
+        ding: target.ding,
+        scaleNotes: target.notes,
+        notesPerCount:
+          noteCount >= 1 && noteCount <= 12 ? state.notesPerCount : state.notesPerCount,
+      });
+
+      // Remember as the active default for future new compositions.
+      if (baseSettings.activeScaleId !== target.id) {
+        const updated = { ...baseSettings, activeScaleId: target.id };
+        setBaseSettings(updated);
+        saveSettings(updated);
+      }
+    },
+    [state, effectiveScale, updateState, baseSettings],
+  );
+
   const compositionManager = CompositionManager({
     state,
     loadedId,
@@ -185,9 +312,23 @@ const Index = () => {
     onSaved: handleSaved,
   });
 
+  // Pick the effective scale's id, if it matches a library entry, so the
+  // picker reflects what's actually in use.
+  const effectiveScaleId = useMemo(() => {
+    const match = scales.find(
+      (s) =>
+        s.ding.trim() === effectiveScale.ding.trim() &&
+        s.notes.trim() === effectiveScale.notes.trim(),
+    );
+    return match?.id ?? baseSettings.activeScaleId ?? null;
+  }, [scales, effectiveScale, baseSettings.activeScaleId]);
+
   return (
     <SettingsContext.Provider
-      value={{ settings, updateSettings: handleUpdateSettings }}
+      value={{
+        settings: effectiveSettings,
+        updateSettings: handleUpdateSettings,
+      }}
     >
       <div
         className={`min-h-screen bg-background p-3 sm:p-6 ${selectedCell && !viewMode ? "pb-28" : ""}`}
@@ -226,13 +367,22 @@ const Index = () => {
                 <span className="text-hand-none">N</span>
               </p>
             )}
-            {loadedName && (
-              <span className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">
-                  {loadedName}
+            <div className="flex items-center gap-3 flex-wrap mt-1">
+              {loadedName && (
+                <span className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">
+                    {loadedName}
+                  </span>
                 </span>
-              </span>
-            )}
+              )}
+              {!viewMode && (
+                <ScalePicker
+                  scales={scales}
+                  activeId={effectiveScaleId}
+                  onPick={pickScale}
+                />
+              )}
+            </div>
           </div>
 
           {!viewMode && (

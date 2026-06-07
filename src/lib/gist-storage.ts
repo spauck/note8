@@ -4,11 +4,18 @@ import {
   type SavedComposition,
   writeSavedCompositions,
 } from "./composition-storage";
+import {
+  listScales,
+  mergeScales,
+  type SavedScale,
+  writeScales,
+} from "./scale-library";
 
 const TOKEN_KEY = "handpan-gist-token";
 const GIST_ID_KEY = "handpan-gist-id";
 const GIST_FILENAME = "handpan-compositions.json";
 const GIST_DESCRIPTION = "Handpan Composer compositions";
+
 
 
 
@@ -63,13 +70,18 @@ async function gh<T>(
   return (await res.json()) as T;
 }
 
-async function fetchRemoteCompositions(
+interface RemotePayload {
+  compositions: SavedComposition[];
+  scales: SavedScale[];
+}
+
+async function fetchRemote(
   token: string,
   gistId: string,
-): Promise<SavedComposition[]> {
+): Promise<RemotePayload> {
   const gist = await gh<GistResponse>(`/gists/${gistId}`, token);
   const file = gist.files[GIST_FILENAME] ?? Object.values(gist.files)[0];
-  if (!file) return [];
+  if (!file) return { compositions: [], scales: [] };
   let content = file.content;
   if (file.truncated && file.raw_url) {
     const r = await fetch(file.raw_url);
@@ -77,20 +89,31 @@ async function fetchRemoteCompositions(
   }
   try {
     const parsed = JSON.parse(content);
-    return Array.isArray(parsed) ? (parsed as SavedComposition[]) : [];
+    // Legacy format: bare array of compositions.
+    if (Array.isArray(parsed)) {
+      return { compositions: parsed as SavedComposition[], scales: [] };
+    }
+    return {
+      compositions: Array.isArray(parsed?.compositions)
+        ? (parsed.compositions as SavedComposition[])
+        : [],
+      scales: Array.isArray(parsed?.scales)
+        ? (parsed.scales as SavedScale[])
+        : [],
+    };
   } catch {
-    return [];
+    return { compositions: [], scales: [] };
   }
 }
 
-async function writeRemoteCompositions(
+async function writeRemote(
   token: string,
   gistId: string,
-  comps: SavedComposition[],
+  payload: RemotePayload,
 ): Promise<void> {
   const body = JSON.stringify({
     files: {
-      [GIST_FILENAME]: { content: JSON.stringify(comps, null, 2) },
+      [GIST_FILENAME]: { content: JSON.stringify(payload, null, 2) },
     },
   });
   await gh(`/gists/${gistId}`, token, { method: "PATCH", body });
@@ -120,13 +143,13 @@ async function findExistingGist(token: string): Promise<string | null> {
 
 async function createGist(
   token: string,
-  comps: SavedComposition[],
+  payload: RemotePayload,
 ): Promise<string> {
   const body = JSON.stringify({
     description: GIST_DESCRIPTION,
     public: false,
     files: {
-      [GIST_FILENAME]: { content: JSON.stringify(comps, null, 2) },
+      [GIST_FILENAME]: { content: JSON.stringify(payload, null, 2) },
     },
   });
   const gist = await gh<GistResponse>(`/gists`, token, {
@@ -145,14 +168,11 @@ function mergeAndAssignIds(
 ): SavedComposition[] {
   const all = [...a, ...b].filter((c) => c?.name && c?.queryString);
 
-  // Pass 1: build a name -> id map from any entry that already has an id,
-  // so id-less entries can adopt the matching id.
   const nameToId = new Map<string, string>();
   for (const c of all) {
     if (c.id && !nameToId.has(c.name)) nameToId.set(c.name, c.id);
   }
 
-  // Pass 2: pick the newest entry per id (or per name when still id-less).
   const byKey = new Map<string, SavedComposition>();
   for (const c of all) {
     const id = c.id ?? nameToId.get(c.name);
@@ -164,7 +184,6 @@ function mergeAndAssignIds(
     }
   }
 
-  // Pass 3: mint ids for anything still missing one.
   const out: SavedComposition[] = [];
   for (const c of byKey.values()) {
     out.push(c.id ? c : { ...c, id: generateCompositionId() });
@@ -174,22 +193,21 @@ function mergeAndAssignIds(
 
 export interface SyncResult {
   merged: SavedComposition[];
+  mergedScales: SavedScale[];
   gistId: string;
   pulledCount: number;
   totalCount: number;
 }
 
-/** Bi-directional sync: read both local + gist, merge by newest savedAt,
- *  then write the merged set back to both. Creates a gist if none exists. */
 export async function syncWithGist(): Promise<SyncResult> {
   const token = getGistToken();
   if (!token) throw new Error("No GitHub token configured");
 
   const local = listSavedCompositions();
+  const localScales = listScales();
   let gistId = getGistId();
-  let remote: SavedComposition[] = [];
+  let remote: RemotePayload = { compositions: [], scales: [] };
   if (!gistId) {
-    // Try to discover an existing gist on this account before creating one.
     const found = await findExistingGist(token);
     if (found) {
       gistId = found;
@@ -197,25 +215,31 @@ export async function syncWithGist(): Promise<SyncResult> {
     }
   }
   if (gistId) {
-    remote = await fetchRemoteCompositions(token, gistId);
+    remote = await fetchRemote(token, gistId);
   }
-  const merged = mergeAndAssignIds(local, remote);
+  const merged = mergeAndAssignIds(local, remote.compositions);
+  const mergedScales = mergeScales(localScales, remote.scales);
 
-  // Write merged to local
   writeSavedCompositions(merged);
+  writeScales(mergedScales);
 
-  // Write merged to gist (create if needed)
+  const payload: RemotePayload = {
+    compositions: merged,
+    scales: mergedScales,
+  };
+
   if (!gistId) {
-    gistId = await createGist(token, merged);
+    gistId = await createGist(token, payload);
     setGistId(gistId);
   } else {
-    await writeRemoteCompositions(token, gistId, merged);
+    await writeRemote(token, gistId, payload);
   }
 
   return {
     merged,
+    mergedScales,
     gistId,
-    pulledCount: remote.length,
+    pulledCount: remote.compositions.length,
     totalCount: merged.length,
   };
 }

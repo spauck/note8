@@ -7,8 +7,14 @@ export interface Settings {
   anyHandColor: string;
   panscriptFields: number;
   panscriptFieldOffset: number;
+  /** Ding note of the currently rendered scale. Derived from the loaded
+   *  composition (when it specifies one) or from the active library scale. */
   scaleDing: string;
+  /** Space-separated notes of the currently rendered scale. Derived as
+   *  above. */
   scaleNotes: string;
+  /** Default scale to use when a composition doesn't specify its own. */
+  activeScaleId: string | null;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -19,6 +25,7 @@ const DEFAULT_SETTINGS: Settings = {
   panscriptFieldOffset: 0,
   scaleDing: "D3",
   scaleNotes: "A3 A#3 C4 D4 E4 F4 G4 A4",
+  activeScaleId: null,
 };
 
 const STORAGE_KEY = "handpan-settings";
