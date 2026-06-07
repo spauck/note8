@@ -129,7 +129,7 @@ export function decodeState(search: string): ComposerState {
     }
     if (bars.length > 0) {
       bars[0] = { ...bars[0], breakBefore: true };
-      return { notesPerCount: n, bars };
+      return { notesPerCount: n, bars, ding, scaleNotes };
     }
   }
   // ─── END LEGACY MIGRATION ───────────────────────────────────────────────
@@ -137,6 +137,8 @@ export function decodeState(search: string): ComposerState {
   return {
     notesPerCount: n,
     bars: [{ beats: emptyBeats(DEFAULT_BEATS_PER_BAR), breakBefore: true }],
+    ding,
+    scaleNotes,
   };
 }
 
