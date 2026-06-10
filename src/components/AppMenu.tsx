@@ -3,6 +3,7 @@ import {
   Download,
   FilePlus,
   FolderOpen,
+  HardDrive,
   Link,
   Menu,
   RotateCcw,
@@ -27,6 +28,9 @@ interface AppMenuProps {
   onSyncGist?: () => void;
   gistEnabled?: boolean;
   gistSyncing?: boolean;
+  onSyncDrive?: () => void;
+  driveEnabled?: boolean;
+  driveSyncing?: boolean;
 }
 
 /** Top-right "≡" menu containing file/share actions. */
@@ -41,6 +45,9 @@ export function AppMenu({
   onSyncGist,
   gistEnabled,
   gistSyncing,
+  onSyncDrive,
+  driveEnabled,
+  driveSyncing,
 }: AppMenuProps) {
   return (
     <DropdownMenu>
@@ -81,6 +88,12 @@ export function AppMenu({
           <DropdownMenuItem onClick={onSyncGist} disabled={gistSyncing}>
             <Cloud className="w-3.5 h-3.5 mr-2" />
             {gistSyncing ? "Syncing..." : "Sync Gist"}
+          </DropdownMenuItem>
+        )}
+        {driveEnabled && onSyncDrive && (
+          <DropdownMenuItem onClick={onSyncDrive} disabled={driveSyncing}>
+            <HardDrive className="w-3.5 h-3.5 mr-2" />
+            {driveSyncing ? "Syncing..." : "Sync Drive"}
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onClick={onReset}>
