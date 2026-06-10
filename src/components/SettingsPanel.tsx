@@ -453,6 +453,76 @@ export function SettingsPanel() {
               )}
             </div>
           </section>
+
+          {/* Google Drive Sync */}
+          <section>
+            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <HardDrive className="w-4 h-4" />
+              Google Drive Sync
+            </h3>
+            <p className="text-xs text-muted-foreground mb-2">
+              Sync to your own Google Drive — no GitHub account needed. Data
+              is stored in a hidden app folder that only this app can see.
+              You need an OAuth Client ID from{" "}
+              <a
+                href="https://console.cloud.google.com/apis/credentials"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-foreground"
+              >
+                Google Cloud Console
+              </a>{" "}
+              (Web application, with this site's origin authorised).
+            </p>
+            <div className="flex gap-2 mb-2">
+              <Input
+                value={driveClientId}
+                onChange={(e) => setDriveClientIdState(e.target.value)}
+                placeholder="xxxxxxxx.apps.googleusercontent.com"
+                className="text-xs font-mono"
+              />
+              <button
+                type="button"
+                onClick={saveDriveClientId}
+                className="text-xs px-3 py-1 rounded border border-border hover:border-ring/50 text-foreground"
+              >
+                Save
+              </button>
+            </div>
+            <div className="flex gap-2 items-center flex-wrap">
+              {!driveConnected ? (
+                <button
+                  type="button"
+                  onClick={connectDrive}
+                  disabled={!driveClientId.trim()}
+                  className="text-xs px-3 py-1 rounded border border-border hover:border-ring/50 text-foreground disabled:opacity-50"
+                >
+                  Connect
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={runDriveSync}
+                    disabled={driveSyncing}
+                    className="text-xs px-3 py-1 rounded border border-border hover:border-ring/50 text-foreground disabled:opacity-50"
+                  >
+                    {driveSyncing ? "Syncing..." : "Sync now"}
+                  </button>
+                  <span className="text-xs text-muted-foreground">
+                    Connected
+                  </span>
+                  <button
+                    type="button"
+                    onClick={disconnectDrive}
+                    className="text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    Disconnect
+                  </button>
+                </>
+              )}
+            </div>
+          </section>
         </div>
       </SheetContent>
     </Sheet>
