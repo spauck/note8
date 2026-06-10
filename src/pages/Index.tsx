@@ -352,6 +352,9 @@ const Index = () => {
                   onSyncGist={() => gistSync.sync()}
                   gistEnabled={gistSync.enabled}
                   gistSyncing={gistSync.syncing}
+                  onSyncDrive={() => driveSync.sync()}
+                  driveEnabled={driveSync.enabled}
+                  driveSyncing={driveSync.syncing}
                 />
               )}
               <ViewModeToggle viewMode={viewMode} onToggle={toggleViewMode} />
