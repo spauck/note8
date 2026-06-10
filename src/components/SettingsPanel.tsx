@@ -55,6 +55,11 @@ export function SettingsPanel() {
   const [gistId, setGistIdState] = useState<string>(getGistId);
   const [syncing, setSyncing] = useState(false);
   const [scales, setScales] = useState<SavedScale[]>(listScales);
+  const [driveClientId, setDriveClientIdState] =
+    useState<string>(getDriveClientId);
+  const [driveConnected, setDriveConnected] =
+    useState<boolean>(isDriveSignedIn);
+  const [driveSyncing, setDriveSyncing] = useState(false);
 
   const refreshScales = () => setScales(listScales());
 
