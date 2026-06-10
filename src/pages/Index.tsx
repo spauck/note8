@@ -216,8 +216,9 @@ const Index = () => {
       setLoadedMeta(comp.id ?? null, comp.name);
       setLastSavedQuery(encodeState(state));
       if (gistSync.enabled) gistSync.sync({ silent: true });
+      if (driveSync.enabled) driveSync.sync({ silent: true });
     },
-    [state, gistSync, setLoadedMeta],
+    [state, gistSync, driveSync, setLoadedMeta],
   );
 
   const handleNotesPerCountChange = useCallback(
