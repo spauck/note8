@@ -1,4 +1,4 @@
-import { Cloud, Moon, Plus, Settings, Sun, Trash2 } from "lucide-react";
+import { Cloud, HardDrive, Moon, Plus, Settings, Sun, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  getDriveClientId,
+  isDriveSignedIn,
+  setDriveClientId,
+  setDriveFileId,
+  signInDrive,
+  signOutDrive,
+  syncWithDrive,
+} from "@/lib/drive-storage";
 import {
   getGistId,
   getGistToken,
