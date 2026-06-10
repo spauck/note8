@@ -209,6 +209,7 @@ const Index = () => {
   );
 
   const gistSync = useGistSync(() => setScales(listScales()));
+  const driveSync = useDriveSync(() => setScales(listScales()));
 
   const handleSaved = useCallback(
     (comp: SavedComposition) => {
