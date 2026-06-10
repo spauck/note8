@@ -99,6 +99,53 @@ export function SettingsPanel() {
     toast.success("Gist link cleared");
   };
 
+  const saveDriveClientId = () => {
+    setDriveClientId(driveClientId.trim());
+    toast.success(
+      driveClientId.trim() ? "Client ID saved" : "Client ID cleared",
+    );
+  };
+
+  const connectDrive = async () => {
+    if (!getDriveClientId()) {
+      toast.error("Add a Google OAuth Client ID first");
+      return;
+    }
+    try {
+      await signInDrive();
+      setDriveConnected(true);
+      toast.success("Connected to Google Drive");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Sign-in failed");
+    }
+  };
+
+  const disconnectDrive = () => {
+    signOutDrive();
+    setDriveFileId("");
+    setDriveConnected(false);
+    toast.success("Disconnected from Drive");
+  };
+
+  const runDriveSync = async () => {
+    if (!isDriveSignedIn()) {
+      await connectDrive();
+      if (!isDriveSignedIn()) return;
+    }
+    setDriveSyncing(true);
+    try {
+      const res = await syncWithDrive();
+      refreshScales();
+      toast.success(
+        `Synced ${res.totalCount} composition${res.totalCount !== 1 ? "s" : ""}`,
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Sync failed");
+    } finally {
+      setDriveSyncing(false);
+    }
+  };
+
   const isDark = theme === "dark";
 
   const toggleTheme = () => {
