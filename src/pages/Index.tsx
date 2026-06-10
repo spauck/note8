@@ -13,6 +13,7 @@ import { ViewModeToggle } from "@/components/ViewModeToggle";
 import { readAutosave, useAutosave } from "@/hooks/useAutosave";
 import { useBarOperations } from "@/hooks/useBarOperations";
 import { useComposerState } from "@/hooks/useComposerState";
+import { useDriveSync } from "@/hooks/useDriveSync";
 import { useGistSync } from "@/hooks/useGistSync";
 import { useNoteAssignment } from "@/hooks/useNoteAssignment";
 import { useRowOperations } from "@/hooks/useRowOperations";
@@ -208,14 +209,16 @@ const Index = () => {
   );
 
   const gistSync = useGistSync(() => setScales(listScales()));
+  const driveSync = useDriveSync(() => setScales(listScales()));
 
   const handleSaved = useCallback(
     (comp: SavedComposition) => {
       setLoadedMeta(comp.id ?? null, comp.name);
       setLastSavedQuery(encodeState(state));
       if (gistSync.enabled) gistSync.sync({ silent: true });
+      if (driveSync.enabled) driveSync.sync({ silent: true });
     },
-    [state, gistSync, setLoadedMeta],
+    [state, gistSync, driveSync, setLoadedMeta],
   );
 
   const handleNotesPerCountChange = useCallback(
@@ -349,6 +352,9 @@ const Index = () => {
                   onSyncGist={() => gistSync.sync()}
                   gistEnabled={gistSync.enabled}
                   gistSyncing={gistSync.syncing}
+                  onSyncDrive={() => driveSync.sync()}
+                  driveEnabled={driveSync.enabled}
+                  driveSyncing={driveSync.syncing}
                 />
               )}
               <ViewModeToggle viewMode={viewMode} onToggle={toggleViewMode} />
