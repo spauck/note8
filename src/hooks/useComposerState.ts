@@ -21,7 +21,16 @@ export function useComposerState() {
       // Preserve non-state params like `name` and `id` that live alongside
       // the encoded composition state in the URL.
       searchParams.forEach((value, key) => {
-        if (!next.has(key) && key !== "n" && key !== "bars" && key !== "ding" && key !== "scale") {
+        if (
+          !next.has(key) &&
+          key !== "n" &&
+          key !== "bars" &&
+          key !== "ding" &&
+          key !== "scale" &&
+          key !== "b" &&
+          key !== "r" &&
+          key !== "d"
+        ) {
           next.set(key, value);
         }
       });
