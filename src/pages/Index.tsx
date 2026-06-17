@@ -450,6 +450,16 @@ const Index = () => {
         />
       )}
       {compositionManager.dialogs}
+      <ScaleChangeDialog
+        open={pendingScale !== null}
+        target={pendingScale}
+        state={state}
+        fromDing={effectiveScale.ding}
+        fromNotes={effectiveScale.notes}
+        onCancel={() => setPendingScale(null)}
+        onApplyOnly={applyScaleOnly}
+        onTranspose={transposeToScale}
+      />
     </SettingsContext.Provider>
   );
 };
