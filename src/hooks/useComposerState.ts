@@ -17,9 +17,17 @@ export function useComposerState() {
 
   const updateState = useCallback(
     (newState: ComposerState) => {
-      setSearchParams(encodeState(newState), { replace: true });
+      const next = new URLSearchParams(encodeState(newState));
+      // Preserve non-state params like `name` and `id` that live alongside
+      // the encoded composition state in the URL.
+      searchParams.forEach((value, key) => {
+        if (!next.has(key) && key !== "n" && key !== "bars" && key !== "ding" && key !== "scale") {
+          next.set(key, value);
+        }
+      });
+      setSearchParams(next, { replace: true });
     },
-    [setSearchParams],
+    [searchParams, setSearchParams],
   );
 
   return { state, updateState, searchParams, setSearchParams };
