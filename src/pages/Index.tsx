@@ -7,6 +7,7 @@ import { CompositionManager } from "@/components/CompositionManager";
 import { InfoDialog } from "@/components/InfoDialog";
 import { NotesPerCountSelect } from "@/components/NotesPerCountSelect";
 import { PositionKeyboard } from "@/components/PositionKeyboard";
+import { ScaleChangeDialog } from "@/components/ScaleChangeDialog";
 import { ScalePicker } from "@/components/ScalePicker";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ViewModeToggle } from "@/components/ViewModeToggle";
