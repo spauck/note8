@@ -254,9 +254,36 @@ const Index = () => {
     });
   }, []);
 
-  // Transpose every note in the composition into the target scale, and
-  // write the new scale into the URL so it persists with the composition.
-  const pickScale = useCallback(
+  const [pendingScale, setPendingScale] = useState<SavedScale | null>(null);
+
+  const rememberActive = useCallback(
+    (target: SavedScale) => {
+      if (baseSettings.activeScaleId !== target.id) {
+        const updated = { ...baseSettings, activeScaleId: target.id };
+        setBaseSettings(updated);
+        saveSettings(updated);
+      }
+    },
+    [baseSettings],
+  );
+
+  // Apply scale without changing any beats — same positional ids now play
+  // the new scale's notes.
+  const applyScaleOnly = useCallback(
+    (target: SavedScale) => {
+      updateState({
+        ...state,
+        ding: target.ding,
+        scaleNotes: target.notes,
+      });
+      rememberActive(target);
+      setPendingScale(null);
+    },
+    [state, updateState, rememberActive],
+  );
+
+  // Transpose every note in the composition into the target scale.
+  const transposeToScale = useCallback(
     (target: SavedScale) => {
       const fromDing = parseNote(effectiveScale.ding);
       const fromNotes = parseScaleNotes(effectiveScale.notes);
@@ -275,7 +302,6 @@ const Index = () => {
             toDing,
             toNotes,
           );
-          // Preserve hand assignments by index; drop notes that couldn't map.
           const out = [] as typeof beat;
           let j = 0;
           for (let i = 0; i < beat.length && j < mapped.length; i++) {
@@ -286,26 +312,22 @@ const Index = () => {
         }),
       }));
 
-      const noteCount = target.notes.trim().split(/\s+/).filter(Boolean).length;
-
       updateState({
         ...state,
         bars: newBars,
         ding: target.ding,
         scaleNotes: target.notes,
-        notesPerCount:
-          noteCount >= 1 && noteCount <= 12 ? state.notesPerCount : state.notesPerCount,
       });
-
-      // Remember as the active default for future new compositions.
-      if (baseSettings.activeScaleId !== target.id) {
-        const updated = { ...baseSettings, activeScaleId: target.id };
-        setBaseSettings(updated);
-        saveSettings(updated);
-      }
+      rememberActive(target);
+      setPendingScale(null);
     },
-    [state, effectiveScale, updateState, baseSettings],
+    [state, effectiveScale, updateState, rememberActive],
   );
+
+  const pickScale = useCallback((target: SavedScale) => {
+    setPendingScale(target);
+  }, []);
+
 
   const compositionManager = CompositionManager({
     state,
