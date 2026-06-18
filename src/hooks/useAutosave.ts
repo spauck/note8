@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const AUTOSAVE_KEY = "handpan-composer-autosave";
 const AUTOSAVE_INTERVAL = 3000;
@@ -6,11 +6,20 @@ const AUTOSAVE_INTERVAL = 3000;
 /** Periodically persists the URL query string (incl. composition name) to localStorage. */
 export function useAutosave(queryString: string) {
   const lastSavedRef = useRef("");
+  const [savedQuery, setSavedQuery] = useState<string>(() => {
+    try {
+      return localStorage.getItem(AUTOSAVE_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  });
+
   useEffect(() => {
     const timer = setInterval(() => {
       if (queryString && queryString !== lastSavedRef.current) {
         localStorage.setItem(AUTOSAVE_KEY, queryString);
         lastSavedRef.current = queryString;
+        setSavedQuery(queryString);
       }
     }, AUTOSAVE_INTERVAL);
     return () => clearInterval(timer);
@@ -19,8 +28,11 @@ export function useAutosave(queryString: string) {
   const clear = () => {
     localStorage.removeItem(AUTOSAVE_KEY);
     lastSavedRef.current = "";
+    setSavedQuery("");
   };
-  return { clear };
+
+  const pending = !!queryString && queryString !== savedQuery;
+  return { clear, savedQuery, pending };
 }
 
 /** Returns the autosaved query string (only used for the very first render). */
