@@ -394,10 +394,17 @@ const Index = () => {
             )}
             <div className="flex items-center gap-3 flex-wrap mt-1">
               {loadedName && (
-                <span className="text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="font-medium text-foreground">
                     {loadedName}
                   </span>
+                  <SaveStatusIndicator
+                    dirty={hasUnsavedChanges}
+                    hasSavedSlot={!!loadedId}
+                    autosavePending={autosave.pending}
+                    syncEnabled={gistSync.enabled}
+                    syncing={gistSync.syncing}
+                  />
                 </span>
               )}
               {!viewMode && (
