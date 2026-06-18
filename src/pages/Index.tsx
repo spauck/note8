@@ -10,6 +10,7 @@ import { PositionKeyboard } from "@/components/PositionKeyboard";
 import { ScaleChangeDialog } from "@/components/ScaleChangeDialog";
 import { ScalePicker } from "@/components/ScalePicker";
 import { SettingsPanel } from "@/components/SettingsPanel";
+import { SaveStatusIndicator } from "@/components/SaveStatusIndicator";
 import { ViewModeToggle } from "@/components/ViewModeToggle";
 import { readAutosave, useAutosave } from "@/hooks/useAutosave";
 import { useBarOperations } from "@/hooks/useBarOperations";
