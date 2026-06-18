@@ -1,4 +1,4 @@
-import { Cloud, HardDrive, Moon, Plus, Settings, Sun, Trash2 } from "lucide-react";
+import { Cloud, Moon, Plus, Settings, Sun, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -9,15 +9,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  getDriveClientId,
-  isDriveSignedIn,
-  setDriveClientId,
-  setDriveFileId,
-  signInDrive,
-  signOutDrive,
-  syncWithDrive,
-} from "@/lib/drive-storage";
 import {
   getGistId,
   getGistToken,
@@ -55,11 +46,6 @@ export function SettingsPanel() {
   const [gistId, setGistIdState] = useState<string>(getGistId);
   const [syncing, setSyncing] = useState(false);
   const [scales, setScales] = useState<SavedScale[]>(listScales);
-  const [driveClientId, setDriveClientIdState] =
-    useState<string>(getDriveClientId);
-  const [driveConnected, setDriveConnected] =
-    useState<boolean>(isDriveSignedIn);
-  const [driveSyncing, setDriveSyncing] = useState(false);
 
   const refreshScales = () => setScales(listScales());
 
@@ -99,52 +85,6 @@ export function SettingsPanel() {
     toast.success("Gist link cleared");
   };
 
-  const saveDriveClientId = () => {
-    setDriveClientId(driveClientId.trim());
-    toast.success(
-      driveClientId.trim() ? "Client ID saved" : "Client ID cleared",
-    );
-  };
-
-  const connectDrive = async () => {
-    if (!getDriveClientId()) {
-      toast.error("Add a Google OAuth Client ID first");
-      return;
-    }
-    try {
-      await signInDrive();
-      setDriveConnected(true);
-      toast.success("Connected to Google Drive");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Sign-in failed");
-    }
-  };
-
-  const disconnectDrive = () => {
-    signOutDrive();
-    setDriveFileId("");
-    setDriveConnected(false);
-    toast.success("Disconnected from Drive");
-  };
-
-  const runDriveSync = async () => {
-    if (!isDriveSignedIn()) {
-      await connectDrive();
-      if (!isDriveSignedIn()) return;
-    }
-    setDriveSyncing(true);
-    try {
-      const res = await syncWithDrive();
-      refreshScales();
-      toast.success(
-        `Synced ${res.totalCount} composition${res.totalCount !== 1 ? "s" : ""}`,
-      );
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Sync failed");
-    } finally {
-      setDriveSyncing(false);
-    }
-  };
 
   const isDark = theme === "dark";
 
@@ -454,75 +394,6 @@ export function SettingsPanel() {
             </div>
           </section>
 
-          {/* Google Drive Sync */}
-          <section>
-            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-              <HardDrive className="w-4 h-4" />
-              Google Drive Sync
-            </h3>
-            <p className="text-xs text-muted-foreground mb-2">
-              Sync to your own Google Drive — no GitHub account needed. Data
-              is stored in a hidden app folder that only this app can see.
-              You need an OAuth Client ID from{" "}
-              <a
-                href="https://console.cloud.google.com/apis/credentials"
-                target="_blank"
-                rel="noreferrer"
-                className="underline hover:text-foreground"
-              >
-                Google Cloud Console
-              </a>{" "}
-              (Web application, with this site's origin authorised).
-            </p>
-            <div className="flex gap-2 mb-2">
-              <Input
-                value={driveClientId}
-                onChange={(e) => setDriveClientIdState(e.target.value)}
-                placeholder="xxxxxxxx.apps.googleusercontent.com"
-                className="text-xs font-mono"
-              />
-              <button
-                type="button"
-                onClick={saveDriveClientId}
-                className="text-xs px-3 py-1 rounded border border-border hover:border-ring/50 text-foreground"
-              >
-                Save
-              </button>
-            </div>
-            <div className="flex gap-2 items-center flex-wrap">
-              {!driveConnected ? (
-                <button
-                  type="button"
-                  onClick={connectDrive}
-                  disabled={!driveClientId.trim()}
-                  className="text-xs px-3 py-1 rounded border border-border hover:border-ring/50 text-foreground disabled:opacity-50"
-                >
-                  Connect
-                </button>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={runDriveSync}
-                    disabled={driveSyncing}
-                    className="text-xs px-3 py-1 rounded border border-border hover:border-ring/50 text-foreground disabled:opacity-50"
-                  >
-                    {driveSyncing ? "Syncing..." : "Sync now"}
-                  </button>
-                  <span className="text-xs text-muted-foreground">
-                    Connected
-                  </span>
-                  <button
-                    type="button"
-                    onClick={disconnectDrive}
-                    className="text-xs text-muted-foreground hover:text-destructive"
-                  >
-                    Disconnect
-                  </button>
-                </>
-              )}
-            </div>
-          </section>
         </div>
       </SheetContent>
     </Sheet>
