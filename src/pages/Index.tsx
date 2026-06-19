@@ -516,6 +516,20 @@ const Index = () => {
         onApplyOnly={applyScaleOnly}
         onTranspose={transposeToScale}
       />
+      <ConfirmDialog
+        open={remotePromptOpen}
+        onOpenChange={(o) => {
+          if (!o) dismissRemoteNewer();
+        }}
+        title="Newer version found in cloud"
+        description={
+          hasUnsavedChanges
+            ? "A more recent version of this composition was found in your cloud sync. Loading it will discard your current unsaved changes."
+            : "A more recent version of this composition was found in your cloud sync. Load it?"
+        }
+        confirmLabel="Load newer version"
+        onConfirm={loadRemoteNewer}
+      />
     </SettingsContext.Provider>
   );
 };
