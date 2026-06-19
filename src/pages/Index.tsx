@@ -20,7 +20,11 @@ import { useGistSync } from "@/hooks/useGistSync";
 import { useNoteAssignment } from "@/hooks/useNoteAssignment";
 import { useRowOperations } from "@/hooks/useRowOperations";
 import { encodeState } from "@/lib/composer-state";
-import type { SavedComposition } from "@/lib/composition-storage";
+import {
+  findCompositionById,
+  type SavedComposition,
+} from "@/lib/composition-storage";
+import { ConfirmDialog } from "@/components/composition/ConfirmDialog";
 import { parseNote, parseScaleNotes, transposeNoteIds } from "@/lib/scale";
 import {
   ensureDefaultScale,
@@ -96,7 +100,10 @@ const Index = () => {
     },
     [searchParams, setSearchParams],
   );
-  const [lastSavedQuery, setLastSavedQuery] = useState<string | null>(null);
+  // Bumped whenever the saved composition library changes (save, sync, etc.)
+  // so derived state recomputes from the actual stored data.
+  const [savedTick, setSavedTick] = useState(0);
+  const bumpSavedTick = useCallback(() => setSavedTick((t) => t + 1), []);
 
   const autosave = useAutosave(searchParams.toString());
 
@@ -146,10 +153,43 @@ const Index = () => {
   }, [isEmpty, loadedName, loadedId, setLoadedMeta]);
 
   const currentQuery = encodeState(state);
-  const hasUnsavedChanges =
-    lastSavedQuery !== null
-      ? currentQuery !== lastSavedQuery
-      : searchParams.toString() !== "";
+
+  const [remoteNewerForLoaded, setRemoteNewerForLoaded] =
+    useState<SavedComposition | null>(null);
+  const [remotePromptOpen, setRemotePromptOpen] = useState(false);
+
+  const gistSync = useGistSync((result) => {
+    setScales(listScales());
+    bumpSavedTick();
+    if (loadedId && result.remoteNewerIds.includes(loadedId)) {
+      const fresh = findCompositionById(loadedId);
+      if (fresh && fresh.queryString !== currentQuery) {
+        setRemoteNewerForLoaded(fresh);
+        setRemotePromptOpen(true);
+      }
+    }
+  });
+
+  // The persisted record for the loaded composition, re-read whenever the
+  // library changes (save, sync, etc). Derived state below compares against
+  // this real stored value rather than tracking events.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: savedTick triggers re-read
+  const savedComp = useMemo(
+    () => findCompositionById(loadedId),
+    [loadedId, savedTick],
+  );
+
+  const hasUnsavedChanges = savedComp
+    ? currentQuery !== savedComp.queryString
+    : !isEmpty;
+
+  // Cloud-upload pending when the local record was saved after the last sync.
+  const cloudUploadPending = !!(
+    gistSync.enabled &&
+    savedComp &&
+    gistSync.lastSyncedAt !== null &&
+    (savedComp.savedAt ?? 0) > gistSync.lastSyncedAt
+  );
 
   useEffect(() => {
     applyTheme(loadTheme());
@@ -204,21 +244,19 @@ const Index = () => {
       if (comp.id) params.set("id", comp.id);
       else params.delete("id");
       setSearchParams(params.toString(), { replace: true });
-      setLastSavedQuery(comp.queryString);
       setSelectedCell(null);
+      bumpSavedTick();
     },
-    [setSearchParams],
+    [setSearchParams, bumpSavedTick],
   );
-
-  const gistSync = useGistSync(() => setScales(listScales()));
 
   const handleSaved = useCallback(
     (comp: SavedComposition) => {
       setLoadedMeta(comp.id ?? null, comp.name);
-      setLastSavedQuery(encodeState(state));
+      bumpSavedTick();
       if (gistSync.enabled) gistSync.sync({ silent: true });
     },
-    [state, gistSync, setLoadedMeta],
+    [gistSync, setLoadedMeta, bumpSavedTick],
   );
 
   const handleNotesPerCountChange = useCallback(
@@ -232,9 +270,21 @@ const Index = () => {
   const reset = useCallback(() => {
     setSearchParams("", { replace: true });
     setSelectedCell(null);
-    setLastSavedQuery(null);
     autosave.clear();
-  }, [setSearchParams, autosave]);
+    bumpSavedTick();
+  }, [setSearchParams, autosave, bumpSavedTick]);
+
+  const loadRemoteNewer = useCallback(() => {
+    if (remoteNewerForLoaded) {
+      handleLoad(remoteNewerForLoaded);
+      setRemoteNewerForLoaded(null);
+      setRemotePromptOpen(false);
+    }
+  }, [remoteNewerForLoaded, handleLoad]);
+
+  const dismissRemoteNewer = useCallback(() => {
+    setRemotePromptOpen(false);
+  }, []);
 
   const shareUrl = useCallback(() => {
     const url = new URL(window.location.href);
@@ -404,6 +454,9 @@ const Index = () => {
                     autosavePending={autosave.pending}
                     syncEnabled={gistSync.enabled}
                     syncing={gistSync.syncing}
+                    cloudUploadPending={cloudUploadPending}
+                    remoteNewerAvailable={!!remoteNewerForLoaded}
+                    onLoadRemote={() => setRemotePromptOpen(true)}
                   />
                 </span>
               )}
@@ -462,6 +515,20 @@ const Index = () => {
         onCancel={() => setPendingScale(null)}
         onApplyOnly={applyScaleOnly}
         onTranspose={transposeToScale}
+      />
+      <ConfirmDialog
+        open={remotePromptOpen}
+        onOpenChange={(o) => {
+          if (!o) dismissRemoteNewer();
+        }}
+        title="Newer version found in cloud"
+        description={
+          hasUnsavedChanges
+            ? "A more recent version of this composition was found in your cloud sync. Loading it will discard your current unsaved changes."
+            : "A more recent version of this composition was found in your cloud sync. Load it?"
+        }
+        confirmLabel="Load newer version"
+        onConfirm={loadRemoteNewer}
       />
     </SettingsContext.Provider>
   );

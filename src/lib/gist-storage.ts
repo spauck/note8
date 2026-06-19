@@ -197,6 +197,12 @@ export interface SyncResult {
   gistId: string;
   pulledCount: number;
   totalCount: number;
+  /** Ids whose remote version was newer than (or absent from) the local copy
+   *  AND whose content actually differs from the local copy. The caller can
+   *  use this to prompt the user to load a fresher version. */
+  remoteNewerIds: string[];
+  /** Wall-clock time the sync completed; useful for displaying freshness. */
+  syncedAt: number;
 }
 
 export async function syncWithGist(): Promise<SyncResult> {
@@ -217,6 +223,24 @@ export async function syncWithGist(): Promise<SyncResult> {
   if (gistId) {
     remote = await fetchRemote(token, gistId);
   }
+
+  // Detect remote-newer entries BEFORE merging, so we can tell the caller.
+  const localById = new Map(
+    local.filter((c) => c.id).map((c) => [c.id as string, c]),
+  );
+  const remoteNewerIds: string[] = [];
+  for (const r of remote.compositions) {
+    if (!r.id) continue;
+    const l = localById.get(r.id);
+    if (!l) continue; // brand-new remote; not "newer than" something we have
+    if (
+      (r.savedAt ?? 0) > (l.savedAt ?? 0) &&
+      r.queryString !== l.queryString
+    ) {
+      remoteNewerIds.push(r.id);
+    }
+  }
+
   const merged = mergeAndAssignIds(local, remote.compositions);
   const mergedScales = mergeScales(localScales, remote.scales);
 
@@ -241,5 +265,7 @@ export async function syncWithGist(): Promise<SyncResult> {
     gistId,
     pulledCount: remote.compositions.length,
     totalCount: merged.length,
+    remoteNewerIds,
+    syncedAt: Date.now(),
   };
 }
