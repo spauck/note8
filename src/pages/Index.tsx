@@ -244,21 +244,19 @@ const Index = () => {
       if (comp.id) params.set("id", comp.id);
       else params.delete("id");
       setSearchParams(params.toString(), { replace: true });
-      setLastSavedQuery(comp.queryString);
       setSelectedCell(null);
+      bumpSavedTick();
     },
-    [setSearchParams],
+    [setSearchParams, bumpSavedTick],
   );
-
-  const gistSync = useGistSync(() => setScales(listScales()));
 
   const handleSaved = useCallback(
     (comp: SavedComposition) => {
       setLoadedMeta(comp.id ?? null, comp.name);
-      setLastSavedQuery(encodeState(state));
+      bumpSavedTick();
       if (gistSync.enabled) gistSync.sync({ silent: true });
     },
-    [state, gistSync, setLoadedMeta],
+    [gistSync, setLoadedMeta, bumpSavedTick],
   );
 
   const handleNotesPerCountChange = useCallback(
@@ -272,9 +270,21 @@ const Index = () => {
   const reset = useCallback(() => {
     setSearchParams("", { replace: true });
     setSelectedCell(null);
-    setLastSavedQuery(null);
     autosave.clear();
-  }, [setSearchParams, autosave]);
+    bumpSavedTick();
+  }, [setSearchParams, autosave, bumpSavedTick]);
+
+  const loadRemoteNewer = useCallback(() => {
+    if (remoteNewerForLoaded) {
+      handleLoad(remoteNewerForLoaded);
+      setRemoteNewerForLoaded(null);
+      setRemotePromptOpen(false);
+    }
+  }, [remoteNewerForLoaded, handleLoad]);
+
+  const dismissRemoteNewer = useCallback(() => {
+    setRemotePromptOpen(false);
+  }, []);
 
   const shareUrl = useCallback(() => {
     const url = new URL(window.location.href);
