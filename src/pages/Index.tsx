@@ -100,7 +100,10 @@ const Index = () => {
     },
     [searchParams, setSearchParams],
   );
-  const [lastSavedQuery, setLastSavedQuery] = useState<string | null>(null);
+  // Bumped whenever the saved composition library changes (save, sync, etc.)
+  // so derived state recomputes from the actual stored data.
+  const [savedTick, setSavedTick] = useState(0);
+  const bumpSavedTick = useCallback(() => setSavedTick((t) => t + 1), []);
 
   const autosave = useAutosave(searchParams.toString());
 
