@@ -1,4 +1,12 @@
-import { Check, CloudOff, CloudUpload, HardDriveDownload, Loader2, PencilLine } from "lucide-react";
+import {
+  Check,
+  CloudDownload,
+  CloudOff,
+  CloudUpload,
+  HardDriveDownload,
+  Loader2,
+  PencilLine,
+} from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -17,6 +25,12 @@ interface SaveStatusIndicatorProps {
   syncEnabled: boolean;
   /** Cloud sync is in progress. */
   syncing: boolean;
+  /** Local saved record has unsynced changes (newer than last sync). */
+  cloudUploadPending: boolean;
+  /** Remote has a newer version of the currently loaded composition. */
+  remoteNewerAvailable: boolean;
+  /** Click handler for the "newer in cloud" badge. */
+  onLoadRemote?: () => void;
 }
 
 type Tone = "muted" | "warn" | "ok" | "info";
@@ -34,6 +48,9 @@ export const SaveStatusIndicator = ({
   autosavePending,
   syncEnabled,
   syncing,
+  cloudUploadPending,
+  remoteNewerAvailable,
+  onLoadRemote,
 }: SaveStatusIndicatorProps) => {
   // Primary state: dirty vs saved
   let Icon = Check;
@@ -62,6 +79,19 @@ export const SaveStatusIndicator = ({
     tone = "ok";
   }
 
+  let cloudIcon = CloudUpload;
+  let cloudTone: Tone = "ok";
+  let cloudLabel = "Synced with cloud";
+  if (syncing) {
+    cloudIcon = Loader2;
+    cloudTone = "info";
+    cloudLabel = "Syncing with cloud…";
+  } else if (cloudUploadPending) {
+    cloudIcon = CloudUpload;
+    cloudTone = "warn";
+    cloudLabel = "Local changes not yet uploaded";
+  }
+
   return (
     <TooltipProvider delayDuration={150}>
       <span className="inline-flex items-center gap-1.5">
@@ -77,45 +107,23 @@ export const SaveStatusIndicator = ({
           <TooltipContent side="bottom">{label}</TooltipContent>
         </Tooltip>
 
-        {syncEnabled && (
+        {syncEnabled ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <span
-                className={`inline-flex items-center ${
-                  syncing
-                    ? TONE_CLASS.info
-                    : dirty
-                      ? TONE_CLASS.muted
-                      : TONE_CLASS.ok
-                }`}
-                aria-label={
-                  syncing
-                    ? "Syncing with Gist"
-                    : dirty
-                      ? "Cloud sync pending next save"
-                      : "Synced with Gist"
-                }
+                className={`inline-flex items-center ${TONE_CLASS[cloudTone]}`}
+                aria-label={cloudLabel}
               >
-                {syncing ? (
+                {cloudIcon === Loader2 ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : dirty ? (
-                  <CloudUpload className="h-3.5 w-3.5" />
                 ) : (
                   <CloudUpload className="h-3.5 w-3.5" />
                 )}
               </span>
             </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {syncing
-                ? "Syncing with Gist…"
-                : dirty
-                  ? "Cloud sync pending next save"
-                  : "Synced with Gist"}
-            </TooltipContent>
+            <TooltipContent side="bottom">{cloudLabel}</TooltipContent>
           </Tooltip>
-        )}
-
-        {!syncEnabled && (
+        ) : (
           <Tooltip>
             <TooltipTrigger asChild>
               <span
@@ -127,6 +135,24 @@ export const SaveStatusIndicator = ({
             </TooltipTrigger>
             <TooltipContent side="bottom">
               Cloud sync not configured
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {remoteNewerAvailable && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={onLoadRemote}
+                className={`inline-flex items-center ${TONE_CLASS.info} hover:opacity-80`}
+                aria-label="Newer version available in cloud"
+              >
+                <CloudDownload className="h-3.5 w-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              Newer version available in cloud — click to load
             </TooltipContent>
           </Tooltip>
         )}
