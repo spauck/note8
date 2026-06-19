@@ -153,10 +153,27 @@ const Index = () => {
   }, [isEmpty, loadedName, loadedId, setLoadedMeta]);
 
   const currentQuery = encodeState(state);
-  const hasUnsavedChanges =
-    lastSavedQuery !== null
-      ? currentQuery !== lastSavedQuery
-      : searchParams.toString() !== "";
+
+  // The persisted record for the loaded composition, re-read whenever the
+  // library changes (save, sync, etc). Derived state below compares against
+  // this real stored value rather than tracking events.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: savedTick triggers re-read
+  const savedComp = useMemo(
+    () => findCompositionById(loadedId),
+    [loadedId, savedTick],
+  );
+
+  const hasUnsavedChanges = savedComp
+    ? currentQuery !== savedComp.queryString
+    : !isEmpty;
+
+  // Cloud-upload pending when the local record was saved after the last sync.
+  const cloudUploadPending = !!(
+    gistSync.enabled &&
+    savedComp &&
+    gistSync.lastSyncedAt !== null &&
+    (savedComp.savedAt ?? 0) > gistSync.lastSyncedAt
+  );
 
   useEffect(() => {
     applyTheme(loadTheme());
