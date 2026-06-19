@@ -154,6 +154,22 @@ const Index = () => {
 
   const currentQuery = encodeState(state);
 
+  const [remoteNewerForLoaded, setRemoteNewerForLoaded] =
+    useState<SavedComposition | null>(null);
+  const [remotePromptOpen, setRemotePromptOpen] = useState(false);
+
+  const gistSync = useGistSync((result) => {
+    setScales(listScales());
+    bumpSavedTick();
+    if (loadedId && result.remoteNewerIds.includes(loadedId)) {
+      const fresh = findCompositionById(loadedId);
+      if (fresh && fresh.queryString !== currentQuery) {
+        setRemoteNewerForLoaded(fresh);
+        setRemotePromptOpen(true);
+      }
+    }
+  });
+
   // The persisted record for the loaded composition, re-read whenever the
   // library changes (save, sync, etc). Derived state below compares against
   // this real stored value rather than tracking events.
