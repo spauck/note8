@@ -20,7 +20,11 @@ import { useGistSync } from "@/hooks/useGistSync";
 import { useNoteAssignment } from "@/hooks/useNoteAssignment";
 import { useRowOperations } from "@/hooks/useRowOperations";
 import { encodeState } from "@/lib/composer-state";
-import type { SavedComposition } from "@/lib/composition-storage";
+import {
+  findCompositionById,
+  type SavedComposition,
+} from "@/lib/composition-storage";
+import { ConfirmDialog } from "@/components/composition/ConfirmDialog";
 import { parseNote, parseScaleNotes, transposeNoteIds } from "@/lib/scale";
 import {
   ensureDefaultScale,
