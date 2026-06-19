@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { getGistId, getGistToken, syncWithGist } from "@/lib/gist-storage";
+import {
+  getGistId,
+  getGistToken,
+  type SyncResult,
+  syncWithGist,
+} from "@/lib/gist-storage";
 
 /** Manages background sync with GitHub Gist when a token is configured. */
-export function useGistSync(onSynced?: () => void) {
+export function useGistSync(onSynced?: (result: SyncResult) => void) {
   const [syncing, setSyncing] = useState(false);
   const [enabled, setEnabled] = useState(() => !!getGistToken());
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
   const onSyncedRef = useRef(onSynced);
   onSyncedRef.current = onSynced;
 
@@ -21,7 +27,8 @@ export function useGistSync(onSynced?: () => void) {
           })`,
         );
       }
-      onSyncedRef.current?.();
+      setLastSyncedAt(result.syncedAt);
+      onSyncedRef.current?.(result);
       return result;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
@@ -47,5 +54,6 @@ export function useGistSync(onSynced?: () => void) {
     enabled,
     refreshEnabled,
     hasGist: !!getGistId(),
+    lastSyncedAt,
   };
 }
