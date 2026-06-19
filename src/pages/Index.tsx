@@ -454,6 +454,9 @@ const Index = () => {
                     autosavePending={autosave.pending}
                     syncEnabled={gistSync.enabled}
                     syncing={gistSync.syncing}
+                    cloudUploadPending={cloudUploadPending}
+                    remoteNewerAvailable={!!remoteNewerForLoaded}
+                    onLoadRemote={() => setRemotePromptOpen(true)}
                   />
                 </span>
               )}
