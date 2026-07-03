@@ -67,12 +67,25 @@ export function resolveNoteIds(
   return out;
 }
 
-const CHORD_PATTERNS: Array<{ intervals: number[]; suffix: string }> = [
-  { intervals: [0, 4, 7], suffix: "" }, // major
-  { intervals: [0, 3, 7], suffix: "m" }, // minor
-  { intervals: [0, 3, 6], suffix: "dim" }, // diminished
-  { intervals: [0, 4, 8], suffix: "aug" }, // augmented
-  { intervals: [0, 7], suffix: "5" }, // power
+// Ordered from most specific (4-note) to least (2-note) so that the bar
+// chord detector can prefer higher-order matches.
+export const CHORD_PATTERNS: Array<{
+  intervals: number[];
+  suffix: string;
+  rank: number;
+}> = [
+  { intervals: [0, 4, 7, 11], suffix: "maj7", rank: 4 },
+  { intervals: [0, 3, 7, 10], suffix: "m7", rank: 4 },
+  { intervals: [0, 4, 7, 10], suffix: "7", rank: 4 },
+  { intervals: [0, 3, 6, 10], suffix: "m7b5", rank: 4 },
+  { intervals: [0, 3, 6, 9], suffix: "dim7", rank: 4 },
+  { intervals: [0, 4, 7], suffix: "", rank: 3 }, // major
+  { intervals: [0, 3, 7], suffix: "m", rank: 3 }, // minor
+  { intervals: [0, 3, 6], suffix: "dim", rank: 3 }, // diminished
+  { intervals: [0, 4, 8], suffix: "aug", rank: 3 }, // augmented
+  { intervals: [0, 5, 7], suffix: "sus4", rank: 3 },
+  { intervals: [0, 2, 7], suffix: "sus2", rank: 3 },
+  { intervals: [0, 7], suffix: "5", rank: 2 }, // power
 ];
 
 const SHARP_NAMES = [
