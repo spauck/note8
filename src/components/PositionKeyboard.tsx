@@ -38,7 +38,11 @@ export function PositionKeyboard({
   const [tab, setTab] = useState<KeyboardTab>("notes");
   const [lastHand, setLastHand] = useState<Hand>("right");
 
-  const chords = useMemo(() => extractChords(bars), [bars]);
+  const chords = useMemo(() => {
+    const ding = parseNote(settings.scaleDing);
+    const scale = parseScaleNotes(settings.scaleNotes);
+    return generateChords(bars, ding, scale);
+  }, [bars, settings.scaleDing, settings.scaleNotes]);
 
   if (!selectedCell) return null;
 
