@@ -29,6 +29,7 @@ const DEFAULT_SETTINGS: Settings = {
   scaleDing: "D3",
   scaleNotes: "A3 A#3 C4 D4 E4 F4 G4 A4",
   activeScaleId: null,
+  detectBarChords: false,
 };
 
 const STORAGE_KEY = "handpan-settings";
