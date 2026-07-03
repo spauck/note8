@@ -15,6 +15,9 @@ export interface Settings {
   scaleNotes: string;
   /** Default scale to use when a composition doesn't specify its own. */
   activeScaleId: string | null;
+  /** Show detected chords above each bar with underlines under
+   *  contributing beats. */
+  detectBarChords: boolean;
 }
 
 const DEFAULT_SETTINGS: Settings = {
