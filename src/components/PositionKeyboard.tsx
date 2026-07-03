@@ -1,9 +1,10 @@
 import { Eraser } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Bar, Beat, Hand } from "@/lib/composer-state";
+import { parseNote, parseScaleNotes } from "@/lib/scale";
 import { useSettings } from "@/lib/settings";
 import { ChordPad } from "./keyboard/ChordPad";
-import { extractChords, serializeChord } from "./keyboard/chords";
+import { generateChords, serializeChord } from "./keyboard/chords";
 import { HandSelector } from "./keyboard/HandSelector";
 import { KeyboardTabs } from "./keyboard/KeyboardTabs";
 import { NotePad } from "./keyboard/NotePad";
@@ -37,7 +38,11 @@ export function PositionKeyboard({
   const [tab, setTab] = useState<KeyboardTab>("notes");
   const [lastHand, setLastHand] = useState<Hand>("right");
 
-  const chords = useMemo(() => extractChords(bars), [bars]);
+  const chords = useMemo(() => {
+    const ding = parseNote(settings.scaleDing);
+    const scale = parseScaleNotes(settings.scaleNotes);
+    return generateChords(bars, ding, scale);
+  }, [bars, settings.scaleDing, settings.scaleNotes]);
 
   if (!selectedCell) return null;
 
