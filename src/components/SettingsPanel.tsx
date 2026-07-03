@@ -210,6 +210,34 @@ export function SettingsPanel() {
             </div>
           </section>
 
+          {/* Bar Chord Detection */}
+          <section>
+            <h3 className="text-sm font-semibold text-foreground mb-2">
+              Chord Detection
+            </h3>
+            <label className="flex items-start gap-2 text-sm text-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.detectBarChords}
+                onChange={(e) =>
+                  updateSettings({
+                    ...settings,
+                    detectBarChords: e.target.checked,
+                  })
+                }
+                className="mt-0.5"
+              />
+              <span>
+                Detect chords per bar
+                <span className="block text-xs text-muted-foreground">
+                  Label chords above each bar and underline the contributing
+                  beats.
+                </span>
+              </span>
+            </label>
+          </section>
+
+
           {/* Tone Fields */}
           <section>
             <h3 className="text-sm font-semibold text-foreground mb-3">

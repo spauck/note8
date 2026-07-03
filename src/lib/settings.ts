@@ -15,6 +15,9 @@ export interface Settings {
   scaleNotes: string;
   /** Default scale to use when a composition doesn't specify its own. */
   activeScaleId: string | null;
+  /** Show detected chords above each bar with underlines under
+   *  contributing beats. */
+  detectBarChords: boolean;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -26,6 +29,7 @@ const DEFAULT_SETTINGS: Settings = {
   scaleDing: "D3",
   scaleNotes: "A3 A#3 C4 D4 E4 F4 G4 A4",
   activeScaleId: null,
+  detectBarChords: false,
 };
 
 const STORAGE_KEY = "handpan-settings";
