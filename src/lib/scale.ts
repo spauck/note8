@@ -103,12 +103,13 @@ const SHARP_NAMES = [
   "B",
 ];
 
-function pcName(pc: number, scale: ParsedNote[]): string {
+export function pcName(pc: number, scale: ParsedNote[]): string {
   // Prefer spelling from the scale if available
   const match = scale.find((n) => n.pitchClass === pc);
   if (match) return match.letter + match.accidental;
   return SHARP_NAMES[pc];
 }
+
 
 /** Infer a chord label from a set of pitch classes. Returns null if no match. */
 export function inferChord(
