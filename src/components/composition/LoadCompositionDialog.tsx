@@ -65,13 +65,17 @@ export function LoadCompositionDialog({
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <button
-                  type="button"
+                <div
                   onClick={() => onLoad(comp)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") onLoad(comp);
+                  }}
+                  role="button"
+                  tabIndex={0}
                   className="block w-full text-left px-3 pb-2 pt-1 cursor-pointer"
                 >
                   <CompositionPreview queryString={comp.queryString} />
-                </button>
+                </div>
               </div>
             ))}
           </div>
