@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { SavedComposition } from "@/lib/composition-storage";
+import { CompositionPreview } from "./CompositionPreview";
 
 interface LoadCompositionDialogProps {
   open: boolean;
@@ -26,7 +27,7 @@ export function LoadCompositionDialog({
 }: LoadCompositionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Load Composition</DialogTitle>
           <DialogDescription>
@@ -38,29 +39,38 @@ export function LoadCompositionDialog({
             No saved compositions yet.
           </p>
         ) : (
-          <div className="max-h-60 overflow-y-auto space-y-1">
+          <div className="overflow-y-auto space-y-2 pr-1">
             {compositions.map((comp) => (
               <div
                 key={comp.id ?? `name:${comp.name}`}
-                className="flex items-center justify-between px-3 py-2 rounded hover:bg-accent/50 transition-colors group"
+                className="rounded border border-border hover:border-accent-foreground/30 transition-colors group"
               >
+                <div className="flex items-center justify-between px-3 pt-2">
+                  <button
+                    type="button"
+                    className="flex-1 text-left text-sm text-foreground"
+                    onClick={() => onLoad(comp)}
+                  >
+                    <span className="font-medium">{comp.name}</span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      {new Date(comp.savedAt).toLocaleDateString()}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRequestDelete(comp)}
+                    className="opacity-60 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity p-1"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 <button
                   type="button"
-                  className="flex-1 text-left text-sm text-foreground"
                   onClick={() => onLoad(comp)}
+                  className="block w-full text-left px-3 pb-2 pt-1 cursor-pointer"
                 >
-                  <span className="font-medium">{comp.name}</span>
-                  <span className="text-xs text-muted-foreground ml-2">
-                    {new Date(comp.savedAt).toLocaleDateString()}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onRequestDelete(comp)}
-                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity p-1"
-                  title="Delete"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <CompositionPreview queryString={comp.queryString} />
                 </button>
               </div>
             ))}
