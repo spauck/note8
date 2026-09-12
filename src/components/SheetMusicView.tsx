@@ -94,7 +94,7 @@ export function SheetMusicView({
   const yFor = (step: number) => STAFF_TOP + STAFF_H - (step - bottomStep) * STEP;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-3xl">
       {rowBeats.map((row, rowIdx) => {
         const width = LEFT + row.beatCount * BEAT_W + 12;
         return (
@@ -102,10 +102,7 @@ export function SheetMusicView({
             // biome-ignore lint/suspicious/noArrayIndexKey: stable row order
             key={rowIdx}
             viewBox={`0 0 ${width} ${HEIGHT}`}
-            width="100%"
-            height={HEIGHT}
-            preserveAspectRatio="xMinYMid meet"
-            className="max-w-full"
+            className="w-full h-auto"
             role="img"
             aria-label={`Sheet music system ${rowIdx + 1}`}
           >
