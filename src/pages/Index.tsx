@@ -405,6 +405,16 @@ const Index = () => {
     return match?.id ?? baseSettings.activeScaleId ?? null;
   }, [scales, effectiveScale, baseSettings.activeScaleId]);
 
+  // Scale used for the sheet-music rendering: the composition's own scale,
+  // optionally re-rooted to a different exact note.
+  const sheetScale = useMemo(
+    () =>
+      sheetRoot
+        ? rerootScale(effectiveScale.ding, effectiveScale.notes, sheetRoot)
+        : { ding: effectiveScale.ding, notes: effectiveScale.notes },
+    [effectiveScale, sheetRoot],
+  );
+
   return (
     <SettingsContext.Provider
       value={{
@@ -419,7 +429,7 @@ const Index = () => {
           <div className="mb-2 flex items-start justify-between gap-4">
             <AppTitle />
             <div className="flex items-center gap-2">
-              {!viewMode && (
+              {!viewMode && !sheetMode && (
                 <AppMenu
                   onNew={reset}
                   onSave={compositionManager.openSave}
@@ -433,14 +443,20 @@ const Index = () => {
                   gistSyncing={gistSync.syncing}
                 />
               )}
-              <ViewModeToggle viewMode={viewMode} onToggle={toggleViewMode} />
+              {!sheetMode && (
+                <ViewModeToggle viewMode={viewMode} onToggle={toggleViewMode} />
+              )}
+              <SheetMusicToggle
+                active={sheetMode}
+                onToggle={() => setSheetMode((v) => !v)}
+              />
               <InfoDialog />
-              {!viewMode && <SettingsPanel />}
+              {!viewMode && !sheetMode && <SettingsPanel />}
             </div>
           </div>
 
           <div className="mb-6">
-            {!viewMode && isEmpty && (
+            {!viewMode && !sheetMode && isEmpty && (
               <p className="text-sm text-muted-foreground mt-1">
                 Tap a cell, pick a position ·{" "}
                 <span className="text-hand-right">R</span> ·{" "}
@@ -467,41 +483,55 @@ const Index = () => {
                   />
                 </span>
               )}
-              {!viewMode && (
+              {!viewMode && !sheetMode && (
                 <ScalePicker
                   scales={scales}
                   activeId={effectiveScaleId}
                   onPick={pickScale}
                 />
               )}
+              {sheetMode && (
+                <RootNotePicker
+                  value={sheetScale.ding}
+                  onChange={setSheetRoot}
+                />
+              )}
             </div>
           </div>
 
-          {!viewMode && (
+          {!viewMode && !sheetMode && (
             <NotesPerCountSelect
               value={state.notesPerCount}
               onChange={handleNotesPerCountChange}
             />
           )}
 
-          <ComposerGrid
-            bars={state.bars}
-            notesPerCount={state.notesPerCount}
-            viewMode={viewMode}
-            selectedCell={selectedCell}
-            onSelectCell={handleSelectCell}
-            onDeleteBar={barOps.deleteBar}
-            onChangeBarLength={barOps.changeBarLength}
-            onSetBreak={barOps.setBreak}
-            onAddBar={barOps.addBar}
-            onMoveRow={rowOps.moveRow}
-            onDuplicateRow={rowOps.duplicateRow}
-            onDeleteRow={rowOps.deleteRow}
-          />
+          {sheetMode ? (
+            <SheetMusicView
+              bars={state.bars}
+              ding={sheetScale.ding}
+              scaleNotes={sheetScale.notes}
+            />
+          ) : (
+            <ComposerGrid
+              bars={state.bars}
+              notesPerCount={state.notesPerCount}
+              viewMode={viewMode}
+              selectedCell={selectedCell}
+              onSelectCell={handleSelectCell}
+              onDeleteBar={barOps.deleteBar}
+              onChangeBarLength={barOps.changeBarLength}
+              onSetBreak={barOps.setBreak}
+              onAddBar={barOps.addBar}
+              onMoveRow={rowOps.moveRow}
+              onDuplicateRow={rowOps.duplicateRow}
+              onDeleteRow={rowOps.deleteRow}
+            />
+          )}
         </div>
       </div>
 
-      {!viewMode && (
+      {!viewMode && !sheetMode && (
         <PositionKeyboard
           selectedCell={selectedCell}
           activeNotes={noteOps.activeNotes}
