@@ -71,6 +71,9 @@ const Index = () => {
   const [scales, setScales] = useState<SavedScale[]>(listScales);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
   const [viewMode, setViewMode] = useState(false);
+  const [sheetMode, setSheetMode] = useState(false);
+  // Root note used for the sheet-music rendering only (null = composition's own).
+  const [sheetRoot, setSheetRoot] = useState<string | null>(null);
 
   // First-run migration: if the library is empty, seed it from the legacy
   // scaleDing/scaleNotes settings and adopt that as the active scale.
