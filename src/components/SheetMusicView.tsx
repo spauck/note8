@@ -102,7 +102,10 @@ export function SheetMusicView({
             // biome-ignore lint/suspicious/noArrayIndexKey: stable row order
             key={rowIdx}
             viewBox={`0 0 ${width} ${HEIGHT}`}
-            className="w-full h-auto"
+            width="100%"
+            height={HEIGHT}
+            preserveAspectRatio="xMinYMid meet"
+            className="max-w-full"
             role="img"
             aria-label={`Sheet music system ${rowIdx + 1}`}
           >
@@ -123,8 +126,12 @@ export function SheetMusicView({
             {/* clef */}
             <text
               x={LEFT - 38}
-              y={clef === "treble" ? STAFF_TOP + STAFF_H : STAFF_TOP + STAFF_H - 2 * STEP}
-              fontSize={clef === "treble" ? 58 : 46}
+              y={
+                clef === "treble"
+                  ? STAFF_TOP + STAFF_H + 6
+                  : STAFF_TOP + 4 * STEP + 4
+              }
+              fontSize={clef === "treble" ? 44 : 34}
               fill="hsl(var(--foreground))"
             >
               {glyph}
