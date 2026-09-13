@@ -11,9 +11,11 @@ import { ScaleChangeDialog } from "@/components/ScaleChangeDialog";
 import { ScalePicker } from "@/components/ScalePicker";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { RootNotePicker } from "@/components/RootNotePicker";
+import { SheetKeyPicker } from "@/components/SheetKeyPicker";
 import { SheetMusicToggle } from "@/components/SheetMusicToggle";
 import { SheetMusicView } from "@/components/SheetMusicView";
-import { rerootScale } from "@/lib/sheet-music";
+import { type MajorKey, rerootScale } from "@/lib/sheet-music";
+
 import { SaveStatusIndicator } from "@/components/SaveStatusIndicator";
 import { ViewModeToggle } from "@/components/ViewModeToggle";
 import { readAutosave, useAutosave } from "@/hooks/useAutosave";
@@ -74,6 +76,9 @@ const Index = () => {
   const [sheetMode, setSheetMode] = useState(false);
   // Root note used for the sheet-music rendering only (null = composition's own).
   const [sheetRoot, setSheetRoot] = useState<string | null>(null);
+  // Major key used for the sheet-music key signature and note spelling.
+  const [sheetKey, setSheetKey] = useState<MajorKey>("C");
+
 
   // First-run migration: if the library is empty, seed it from the legacy
   // scaleDing/scaleNotes settings and adopt that as the active scale.
@@ -491,11 +496,15 @@ const Index = () => {
                 />
               )}
               {sheetMode && (
-                <RootNotePicker
-                  value={sheetScale.ding}
-                  onChange={setSheetRoot}
-                />
+                <>
+                  <RootNotePicker
+                    value={sheetScale.ding}
+                    onChange={setSheetRoot}
+                  />
+                  <SheetKeyPicker value={sheetKey} onChange={setSheetKey} />
+                </>
               )}
+
             </div>
           </div>
 
@@ -511,7 +520,9 @@ const Index = () => {
               bars={state.bars}
               ding={sheetScale.ding}
               scaleNotes={sheetScale.notes}
+              sheetKey={sheetKey}
             />
+
           ) : (
             <ComposerGrid
               bars={state.bars}
