@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { handColor } from "./handColor";
 import type { BaseNoteProps } from "./Notes";
 
-function getFieldAngle(index: number, total: number, offset: number): number {
+export function getFieldAngle(index: number, total: number, offset: number): number {
   const side = index % 2 ? -1 : 1;
   const increment = Math.floor(index / 2);
   return Math.PI / 2 + (2 * Math.PI * (increment * side + offset)) / total;
