@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import type { PracticeNote } from "@/lib/practice-scale";
+import { useSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
+import { getFieldAngle } from "../PanScriptGlyph";
 
 interface PracticeHandpanProps {
   notes: PracticeNote[];
@@ -11,11 +13,14 @@ interface PracticeHandpanProps {
 }
 
 export function PracticeHandpan({ notes, guess, solved, disabled, onAnswer }: PracticeHandpanProps) {
+  const { settings } = useSettings();
+  const total = notes.length - 1;
   return (
     <div className="practice-pan relative mx-auto aspect-square w-full max-w-[480px] rounded-full border-2 border-border bg-secondary" role="group" aria-label="Handpan notes">
       <div aria-hidden="true" className="absolute inset-[9%] rounded-full border border-border" />
       {notes.map((note, index) => {
-        const angle = Math.PI / 2 + ((index - 1) / Math.max(1, notes.length - 1)) * Math.PI * 2;
+        // Same placement as the composer glyphs, including the offset setting.
+        const angle = getFieldAngle(index, total, settings.panscriptFieldOffset);
         const x = index === 0 ? 50 : 50 + Math.cos(angle) * 36;
         const y = index === 0 ? 50 : 50 + Math.sin(angle) * 36;
         const selected = guess === note.id;
