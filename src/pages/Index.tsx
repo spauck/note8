@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Headphones } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScalePracticeView } from "@/components/ScalePracticeView";
 import { toast } from "sonner";
 import { AppMenu } from "@/components/AppMenu";
 import { AppTitle } from "@/components/AppTitle";
@@ -74,6 +77,7 @@ const Index = () => {
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
   const [viewMode, setViewMode] = useState(false);
   const [sheetMode, setSheetMode] = useState(false);
+  const [practiceMode, setPracticeMode] = useState(false);
   // Root note used for the sheet-music rendering only (null = composition's own).
   const [sheetRoot, setSheetRoot] = useState<string | null>(null);
   // Major key used for the sheet-music key signature and note spelling.
@@ -428,13 +432,13 @@ const Index = () => {
       }}
     >
       <div
-        className={`min-h-screen bg-background p-3 sm:p-6 ${selectedCell && !viewMode ? "pb-28" : ""}`}
+        className={`min-h-screen bg-background p-3 sm:p-6 ${selectedCell && !viewMode && !sheetMode && !practiceMode ? "pb-28" : ""}`}
       >
         <div className="mx-auto">
-          <div className="mb-2 flex items-start justify-between gap-4">
+          <div className="mb-2 flex flex-wrap items-start justify-between gap-4">
             <AppTitle />
-            <div className="flex items-center gap-2">
-              {!viewMode && !sheetMode && (
+            <div className="flex flex-wrap items-center gap-2">
+              {!viewMode && !sheetMode && !practiceMode && (
                 <AppMenu
                   onNew={reset}
                   onSave={compositionManager.openSave}
@@ -448,19 +452,28 @@ const Index = () => {
                   gistSyncing={gistSync.syncing}
                 />
               )}
-              {!sheetMode && (
+              {!sheetMode && !practiceMode && (
                 <ViewModeToggle viewMode={viewMode} onToggle={toggleViewMode} />
               )}
               <SheetMusicToggle
                 active={sheetMode}
-                onToggle={() => setSheetMode((v) => !v)}
+                onToggle={() => { setPracticeMode(false); setSelectedCell(null); setSheetMode((v) => !v); }}
               />
+              <Button
+                variant={practiceMode ? "default" : "outline"}
+                className="h-8 px-2.5 text-xs"
+                aria-pressed={practiceMode}
+                title={practiceMode ? "Back to composer" : "Practice your scale"}
+                onClick={() => { setSheetMode(false); setSelectedCell(null); setPracticeMode((v) => !v); }}
+              >
+                <Headphones /> Practice
+              </Button>
               <InfoDialog />
-              {!viewMode && !sheetMode && <SettingsPanel />}
+              {!viewMode && !sheetMode && !practiceMode && <SettingsPanel />}
             </div>
           </div>
 
-          <div className="mb-6">
+          {!practiceMode && <div className="mb-6">
             {!viewMode && !sheetMode && isEmpty && (
               <p className="text-sm text-muted-foreground mt-1">
                 Tap a cell, pick a position ·{" "}
@@ -506,16 +519,18 @@ const Index = () => {
               )}
 
             </div>
-          </div>
+          </div>}
 
-          {!viewMode && !sheetMode && (
+          {!viewMode && !sheetMode && !practiceMode && (
             <NotesPerCountSelect
               value={state.notesPerCount}
               onChange={handleNotesPerCountChange}
             />
           )}
 
-          {sheetMode ? (
+          {practiceMode ? (
+            <ScalePracticeView ding={effectiveScale.ding} scaleNotes={effectiveScale.notes} scales={scales} />
+          ) : sheetMode ? (
             <SheetMusicView
               bars={state.bars}
               ding={sheetScale.ding}
@@ -542,7 +557,7 @@ const Index = () => {
         </div>
       </div>
 
-      {!viewMode && !sheetMode && (
+      {!viewMode && !sheetMode && !practiceMode && (
         <PositionKeyboard
           selectedCell={selectedCell}
           activeNotes={noteOps.activeNotes}
